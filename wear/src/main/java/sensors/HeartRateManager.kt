@@ -7,7 +7,7 @@ import androidx.health.services.client.MeasureCallback
 import androidx.health.services.client.MeasureClient
 import androidx.health.services.client.data.*
 
-class HeartRateMonitor(
+class HeartRateManager(
     private val measureClient: MeasureClient,
     private val onHeartRateChanged: (Int) -> Unit,
     private val onDangerousHeartRate: (Int) -> Unit
