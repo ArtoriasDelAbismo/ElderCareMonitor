@@ -1,5 +1,3 @@
-
-
 package com.example.eldercaremonitor.sensors
 
 import android.util.Log
@@ -13,42 +11,62 @@ class HeartRateManager(
     private val onDangerousHeartRate: (Int) -> Unit
 ) {
 
+    private var zeroCount = 0            // counts consecutive 0 BPM readings
+    private val ZERO_LIMIT = 3           // ignore isolated 0 BPM unless repeated
+
     private val callback = object : MeasureCallback {
         override fun onDataReceived(data: DataPointContainer) {
-            val hr = data.getData(DataType.HEART_RATE_BPM).firstOrNull()
-            if (hr != null) {
-                val bpm = hr.value.toInt()
-                onHeartRateChanged(bpm)
+            val hrPoint = data.getData(DataType.HEART_RATE_BPM).firstOrNull() ?: return
+            val bpm = hrPoint.value.toInt()
 
-                // Check for dangerous bpm
-                if(bpm > HIGH_BPM_THRESHOLD || bpm < LOW_BPM_THRESHOLD){
-                    onDangerousHeartRate(bpm)
+            // -------------------------
+            // ZERO BPM FILTERING
+            // -------------------------
+            if (bpm == 0) {
+                zeroCount++
+                Log.d("HEART", "Zero detected: $zeroCount")
+
+                if (zeroCount < ZERO_LIMIT) {
+                    // Ignore initial zeros
+                    return
                 }
-
-                Log.d("HEART", "HR = $bpm")
+                // If ZERO_LIMIT reached, accept zero as a valid reading
+            } else {
+                zeroCount = 0 // reset when valid BPM appears
             }
+
+            // -------------------------
+            // Send BPM to UI
+            // -------------------------
+            onHeartRateChanged(bpm)
+
+            // -------------------------
+            // Dangerous heart rate detection
+            // -------------------------
+            if (bpm > 0 && (bpm > HIGH_BPM_THRESHOLD || bpm < LOW_BPM_THRESHOLD)) {
+                onDangerousHeartRate(bpm)
+            }
+
+            Log.d("HEART", "HR = $bpm")
         }
 
         override fun onAvailabilityChanged(
             dataType: DeltaDataType<*, *>,
             availability: Availability
         ) {
-            Log.d("AVAIL", "Availability changed: $dataType, $availability")
+            Log.d("HEART", "Availability changed: $dataType, $availability")
         }
     }
 
     fun start() {
-        measureClient.registerMeasureCallback(
-            DataType.HEART_RATE_BPM,
-            callback
-        )
+        zeroCount = 0
+        measureClient.registerMeasureCallback(DataType.HEART_RATE_BPM, callback)
+        Log.d("HEART", "HeartRateManager started")
     }
 
     fun stop() {
-        measureClient.unregisterMeasureCallbackAsync(
-            DataType.HEART_RATE_BPM,
-            callback
-        )
+        measureClient.unregisterMeasureCallbackAsync(DataType.HEART_RATE_BPM, callback)
+        Log.d("HEART", "HeartRateManager stopped")
     }
 
     companion object {

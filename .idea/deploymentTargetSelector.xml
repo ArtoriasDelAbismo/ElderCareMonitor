@@ -26,10 +26,10 @@
       </SelectionState>
       <SelectionState runConfigName="MainActivity">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-13T11:02:08.141590654Z">
+        <DropdownSelection timestamp="2025-11-18T09:10:20.220491062Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/home/artorias/.android/avd/Wear_OS_Large_Round_2.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=RFAY61013KW" />
             </handle>
           </Target>
         </DropdownSelection>
