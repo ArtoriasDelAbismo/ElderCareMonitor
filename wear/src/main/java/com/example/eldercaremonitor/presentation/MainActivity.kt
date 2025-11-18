@@ -2,57 +2,42 @@ package com.example.eldercaremonitor.presentation
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Vibrator
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationCompat
+import android.app.NotificationChannel
+import android.app.NotificationManager
+
 import androidx.health.services.client.HealthServices
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
-import androidx.core.app.NotificationCompat
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
 
-
+    // Vibration warning
     private fun vibrateWarning() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager =
-                getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            val vibrator = vibratorManager.defaultVibrator
-
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(
-                    600,
-                    VibrationEffect.DEFAULT_AMPLITUDE
-                )
-            )
-
-        } else {
-            @Suppress("DEPRECATION")
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(600)
-        }
+        @Suppress("DEPRECATION")
+        val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+        vibrator.vibrate(600) // simple vibration
     }
 
+    // Notification when watch removed
     private fun showWatchRemovedNotification() {
-        val manager =
-            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
+        // Create channel for API 26+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "wearing_alerts",
@@ -62,9 +47,20 @@ class MainActivity : ComponentActivity() {
             manager.createNotificationChannel(channel)
         }
 
+        // For Android 13+, ensure POST_NOTIFICATIONS permission
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                Toast.makeText(this, "Notifications permission not granted", Toast.LENGTH_SHORT)
+                    .show()
+                return
+            }
+        }
+
         val notification = NotificationCompat.Builder(this, "wearing_alerts")
             .setSmallIcon(android.R.drawable.stat_notify_error)
-
             .setContentTitle("Watch Removed")
             .setContentText("The device is no longer being worn.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -72,7 +68,6 @@ class MainActivity : ComponentActivity() {
 
         manager.notify(1001, notification)
     }
-    // -------------------------
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,9 +76,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var hrText by remember { mutableStateOf("Waiting...") }
-            var wearingText by remember { mutableStateOf("Detecting") }
+            var wearingText by remember { mutableStateOf("Detecting...") }
 
-            // Heart Rate manager
+            // Heart Rate Manager
+
             heartRateManager = HeartRateManager(
                 measureClient = measureClient,
                 onHeartRateChanged = { bpm ->
@@ -94,29 +90,25 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            // Wearing manager inside Compose
+            // Wearing State Manager
+
             wearingManager = remember {
-
-            WearingStateManager(
+                WearingStateManager(
                     context = this@MainActivity,
-                    onWearingStateChanged = { isWearing ->
-
-                        wearingText = if (isWearing) {
-                            "Watch is being worn"
-                        } else {
-                            "⚠️ Watch removed!"
-                        }
-
-                        if (!isWearing) {
-                            vibrateWarning()
-                            showWatchRemovedNotification()
-                            heartRateManager.stop()
-                        } else {
-                            heartRateManager.start()
-                        }
+                    onWorn = {
+                        wearingText = "Status: Wearing ✅"
+                        heartRateManager.start()
+                    },
+                    onRemoved = {
+                        wearingText = "Status: ⚠️ Watch removed!"
+                        vibrateWarning()
+                        showWatchRemovedNotification()
+                        heartRateManager.stop()
                     }
                 )
             }
+
+            // Request BODY_SENSORS permission
 
             val permissionLauncher =
                 rememberLauncherForActivityResult(
@@ -143,6 +135,35 @@ class MainActivity : ComponentActivity() {
                     permissionLauncher.launch(Manifest.permission.BODY_SENSORS)
                 }
             }
+
+
+            // Request POST_NOTIFICATIONS permission (Android 13+)
+
+            val notificationPermissionLauncher =
+                rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    if (!granted) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Notifications permission not granted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+            LaunchedEffect(Unit) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+                        PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            }
+
+
+            // Compose UI
 
             ElderCareMonitorTheme {
                 HeartRateScreen(
