@@ -15,16 +15,32 @@ import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.util.Log
 
 import androidx.health.services.client.HealthServices
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import org.json.JSONObject
+import java.io.IOException
+
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
+    private val userId = "elder_001"
 
     // Vibration warning
     private fun vibrateWarning() {
@@ -69,6 +85,40 @@ class MainActivity : ComponentActivity() {
         manager.notify(1001, notification)
     }
 
+
+// Send alert to backend
+
+    private fun sendWatchRemovedAlert() {
+        Log.d("NETWORK", "Calling backend alert API")
+
+        val client = OkHttpClient()
+        val json = JSONObject()
+        json.put("userId", userId)
+        json.put("timestamp", System.currentTimeMillis())
+
+
+        val requestBody = json.toString()
+            .toRequestBody("application/json; charset=utf-8".toMediaType())
+
+        val request = Request.Builder()
+            .url("http://192.168.1.8:3001/api/alert/watch-removed")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.close()
+            }
+        })
+
+
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -100,10 +150,13 @@ class MainActivity : ComponentActivity() {
                         heartRateManager.start()
                     },
                     onRemoved = {
+                        Log.d("WEARING", "Watch was removed!")
+
                         wearingText = "Status: ⚠️ Watch removed!"
                         vibrateWarning()
                         showWatchRemovedNotification()
                         heartRateManager.stop()
+                        sendWatchRemovedAlert()
                     }
                 )
             }
@@ -180,3 +233,5 @@ class MainActivity : ComponentActivity() {
         wearingManager.stop()
     }
 }
+
+
