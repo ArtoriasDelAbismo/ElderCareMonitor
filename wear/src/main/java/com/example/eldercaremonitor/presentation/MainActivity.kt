@@ -101,21 +101,20 @@ class MainActivity : ComponentActivity() {
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val request = Request.Builder()
-            .url("http://192.168.1.8:3001/api/alert/watch-removed")
+            .url("https://forgiving-lucia-crudely.ngrok-free.dev/api/alert/watch-removed")
             .post(requestBody)
             .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                e.printStackTrace()
+                Log.e("NETWORK", "Failed to call backend", e)
             }
 
             override fun onResponse(call: Call, response: Response) {
+                Log.d("NETWORK", "Backend response code: ${response.code}")
                 response.close()
             }
         })
-
-
     }
 
 
