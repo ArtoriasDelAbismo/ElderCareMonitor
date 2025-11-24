@@ -4,7 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Vibrator
+
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +21,7 @@ import androidx.health.services.client.HealthServices
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
+import com.example.eldercaremonitor.presentation.utils.VibrationHelper
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -40,14 +41,8 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
+    private lateinit var vibrateWarning: VibrationHelper
     private val userId = "elder_001"
-
-    // Vibration warning
-    private fun vibrateWarning() {
-        @Suppress("DEPRECATION")
-        val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-        vibrator.vibrate(600) // simple vibration
-    }
 
     // Notification when watch removed
     private fun showWatchRemovedNotification() {
@@ -120,6 +115,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        vibrateWarning = VibrationHelper(this)
 
         val measureClient = HealthServices.getClient(this).measureClient
 
@@ -152,7 +148,7 @@ class MainActivity : ComponentActivity() {
                         Log.d("WEARING", "Watch was removed!")
 
                         wearingText = "Status: ⚠️ Watch removed!"
-                        vibrateWarning()
+                        vibrateWarning.vibrate()
                         showWatchRemovedNotification()
                         heartRateManager.stop()
                         sendWatchRemovedAlert()
@@ -232,5 +228,7 @@ class MainActivity : ComponentActivity() {
         wearingManager.stop()
     }
 }
+
+
 
 
