@@ -1,10 +1,8 @@
 package com.example.eldercaremonitor.presentation
-
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,29 +10,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
-import androidx.core.app.NotificationCompat
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.util.Log
-
 import androidx.health.services.client.HealthServices
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
+import com.example.eldercaremonitor.presentation.utils.NotificationHelper
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import org.json.JSONObject
-import java.io.IOException
+import data.network.AlertService
+
 
 
 class MainActivity : ComponentActivity() {
@@ -42,80 +26,17 @@ class MainActivity : ComponentActivity() {
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
     private lateinit var vibrateWarning: VibrationHelper
+    private lateinit var showWatchRemovedNotification: NotificationHelper
+    private lateinit var sendWatchRemovedAlert: AlertService
+
     private val userId = "elder_001"
-
-    // Notification when watch removed
-    private fun showWatchRemovedNotification() {
-        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-
-        // Create channel for API 26+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "wearing_alerts",
-                "Wearing Alerts",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            manager.createNotificationChannel(channel)
-        }
-
-        // For Android 13+, ensure POST_NOTIFICATIONS permission
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                Toast.makeText(this, "Notifications permission not granted", Toast.LENGTH_SHORT)
-                    .show()
-                return
-            }
-        }
-
-        val notification = NotificationCompat.Builder(this, "wearing_alerts")
-            .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("Watch Removed")
-            .setContentText("The device is no longer being worn.")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        manager.notify(1001, notification)
-    }
-
-
-// Send alert to backend
-
-    private fun sendWatchRemovedAlert() {
-        Log.d("NETWORK", "Calling backend alert API")
-
-        val client = OkHttpClient()
-        val json = JSONObject()
-        json.put("userId", userId)
-        json.put("timestamp", System.currentTimeMillis())
-
-
-        val requestBody = json.toString()
-            .toRequestBody("application/json; charset=utf-8".toMediaType())
-
-        val request = Request.Builder()
-            .url("https://forgiving-lucia-crudely.ngrok-free.dev/api/alert/watch-removed")
-            .post(requestBody)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e("NETWORK", "Failed to call backend", e)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                Log.d("NETWORK", "Backend response code: ${response.code}")
-                response.close()
-            }
-        })
-    }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         vibrateWarning = VibrationHelper(this)
+        showWatchRemovedNotification = NotificationHelper(this)
+        sendWatchRemovedAlert = AlertService()
 
         val measureClient = HealthServices.getClient(this).measureClient
 
@@ -149,9 +70,9 @@ class MainActivity : ComponentActivity() {
 
                         wearingText = "Status: ⚠️ Watch removed!"
                         vibrateWarning.vibrate()
-                        showWatchRemovedNotification()
+                        showWatchRemovedNotification.showWatchRemovedNotification()
                         heartRateManager.stop()
-                        sendWatchRemovedAlert()
+                        sendWatchRemovedAlert.sendWatchRemovedAlert(userId)
                     }
                 )
             }
