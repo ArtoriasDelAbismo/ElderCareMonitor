@@ -17,14 +17,16 @@ import com.example.eldercaremonitor.presentation.utils.NotificationHelper
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
+import com.example.eldercaremonitor.sensors.FallDetectionManager
 import data.network.AlertService
-
 
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
+    private lateinit var fallDetectionManager: FallDetectionManager
+    private lateinit var showFallDetectedNotification: NotificationHelper
     private lateinit var vibrateWarning: VibrationHelper
     private lateinit var showWatchRemovedNotification: NotificationHelper
     private lateinit var sendWatchRemovedAlert: AlertService
@@ -37,6 +39,7 @@ class MainActivity : ComponentActivity() {
         vibrateWarning = VibrationHelper(this)
         showWatchRemovedNotification = NotificationHelper(this)
         sendWatchRemovedAlert = AlertService()
+        showFallDetectedNotification = NotificationHelper(this)
 
         val measureClient = HealthServices.getClient(this).measureClient
 
@@ -77,6 +80,18 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            // Fall Detection Manager
+
+            fallDetectionManager = FallDetectionManager(
+                context = this@MainActivity,
+                onFallDetected = {
+                    vibrateWarning.vibrate()
+                    Log.d("FALL", "Fall detected!")
+                    sendWatchRemovedAlert.sendWatchRemovedAlert("FALL $userId")
+                    showFallDetectedNotification.showFallDetectedNotification()
+                }
+            )
+
             // Request BODY_SENSORS permission
 
             val permissionLauncher =
@@ -86,6 +101,9 @@ class MainActivity : ComponentActivity() {
                     if (granted) {
                         heartRateManager.start()
                         wearingManager.start()
+                        fallDetectionManager.start()
+                        hrText = "Permission granted"
+                        wearingText = "Permission granted"
                     } else {
                         hrText = "Permission denied"
                         wearingText = "Permission denied"
@@ -100,6 +118,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     heartRateManager.start()
                     wearingManager.start()
+                    fallDetectionManager.start()
+                    hrText = "Permission granted"
+                    wearingText = "Permission granted"
                 } else {
                     permissionLauncher.launch(Manifest.permission.BODY_SENSORS)
                 }
@@ -147,6 +168,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         heartRateManager.stop()
         wearingManager.stop()
+        fallDetectionManager.stop()
     }
 }
 

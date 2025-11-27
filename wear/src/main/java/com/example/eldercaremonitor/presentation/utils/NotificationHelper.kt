@@ -12,6 +12,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
 class NotificationHelper(private val context: Context){
+
+    // Show notification when watch is removed
     fun showWatchRemovedNotification() {
         val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
@@ -47,4 +49,38 @@ class NotificationHelper(private val context: Context){
 
         manager.notify(1001, notification)
     }
-}
+
+    // Show notification when fall is detected
+
+    fun showFallDetectedNotification() {
+        val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "fall_alerts",
+                "Fall Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            manager.createNotificationChannel(channel)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                Toast.makeText(context, "Notifications permission not granted", Toast.LENGTH_SHORT)
+                    .show()
+                return
+            }
+        }
+
+        val notification = NotificationCompat.Builder(context, "fall_alerts")
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle("Fall Detected")
+            .setContentText("A fall has been detected on the device.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        manager.notify(2002, notification)
+        }
+    }
