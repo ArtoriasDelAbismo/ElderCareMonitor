@@ -36,6 +36,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         vibrateWarning = VibrationHelper(this)
         showWatchRemovedNotification = NotificationHelper(this)
         sendWatchRemovedAlert = AlertService()
@@ -102,8 +104,6 @@ class MainActivity : ComponentActivity() {
                         heartRateManager.start()
                         wearingManager.start()
                         fallDetectionManager.start()
-                        hrText = "Permission granted"
-                        wearingText = "Permission granted"
                     } else {
                         hrText = "Permission denied"
                         wearingText = "Permission denied"
@@ -119,8 +119,8 @@ class MainActivity : ComponentActivity() {
                     heartRateManager.start()
                     wearingManager.start()
                     fallDetectionManager.start()
-                    hrText = "Permission granted"
-                    wearingText = "Permission granted"
+                    hrText = "Waiting HR..."
+                    wearingText = "Waiting Wear..."
                 } else {
                     permissionLauncher.launch(Manifest.permission.BODY_SENSORS)
                 }
