@@ -51,7 +51,6 @@ class FallDetectionManager(
         val z = event.values[2]
 
         val acceleration = sqrt(x * x + y * y + z * z)
-        Log.d("ACCEL", "Accel = $acceleration")
 
         val now = System.currentTimeMillis()
 

@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         vibrateWarning = VibrationHelper(this)
-        showWatchRemovedNotification = NotificationHelper(this)
+        showWatchRemovedNotification = NotificationHelper(this)//-----NOT USING IT RIGHT NOW-----
         sendWatchRemovedAlert = AlertService()
         showFallDetectedNotification = NotificationHelper(this)
 
@@ -75,7 +75,6 @@ class MainActivity : ComponentActivity() {
 
                         wearingText = "Status: ⚠️ Watch removed!"
                         vibrateWarning.vibrate()
-                        showWatchRemovedNotification.showWatchRemovedNotification()
                         heartRateManager.stop()
                         sendWatchRemovedAlert.sendWatchRemovedAlert(userId)
                     }

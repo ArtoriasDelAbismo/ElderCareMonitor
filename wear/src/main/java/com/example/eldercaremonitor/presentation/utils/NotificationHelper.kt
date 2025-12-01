@@ -14,7 +14,7 @@ import androidx.core.content.ContextCompat
 class NotificationHelper(private val context: Context){
 
     // Show notification when watch is removed
-    fun showWatchRemovedNotification() {
+    fun showWatchRemovedNotification() { //-------NOT USING IT RIGHT NOW--------
         val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         // Create channel for API 26+
