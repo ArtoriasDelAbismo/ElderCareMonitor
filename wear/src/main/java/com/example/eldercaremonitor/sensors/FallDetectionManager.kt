@@ -20,21 +20,26 @@ class FallDetectionManager(
         sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     // ----- Fall Detection State -----
-    private var lastFreeFallTime = 0L
     private var lastImpactTime = 0L
     private var lastStillnessTime = 0L
-    private var previousAcceleration = 9.8f  // baseline
+    private var previousAcceleration = 9.8f
 
     // ----- Thresholds -----
-    private val freeFallThreshold = 2.0f                 // ~0g
-    private val impactThreshold = 30f                    // strong impact
-    private val maxDelayBetweenFallAndImpact = 1500L     // 1.5s
-    private val requiredStillnessTime = 2000L            // 2s still after impact
-    private val stillnessDeltaThreshold = 0.8f           // movement < 0.8 = still
-    private val movementDeltaThreshold = 1.5f            // movement > 1.5 = motion
+    private val impactThreshold = 30f               // strong impact
+    private val requiredStillnessTime = 2000L       // 2s still after impact
+    private val stillnessDeltaThreshold = 0.8f      // near-zero movement
+    private val movementDeltaThreshold = 1.5f       // reset stillness on movement
+
+    // Fall cooldown to avoid spam detections
+    private val fallCooldown = 5000L                // 5 seconds
+    private var lastFallTriggeredTime = 0L
 
     fun start() {
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(
+            this,
+            accelerometer,
+            SensorManager.SENSOR_DELAY_GAME // faster data → more reliable
+        )
     }
 
     fun stop() {
@@ -46,56 +51,46 @@ class FallDetectionManager(
     }
 
     private fun handleAccelerometer(event: SensorEvent) {
-        val x = event.values[0]
-        val y = event.values[1]
-        val z = event.values[2]
-
+        val (x, y, z) = event.values
         val acceleration = sqrt(x * x + y * y + z * z)
-
         val now = System.currentTimeMillis()
 
-        // ---------- STILLNESS DETECTION ----------
+        // ------- STILLNESS ANALYSIS -------
         val delta = abs(acceleration - previousAcceleration)
         previousAcceleration = acceleration
 
         if (delta < stillnessDeltaThreshold) {
-            // Not moving
             if (lastStillnessTime == 0L) lastStillnessTime = now
         } else if (delta > movementDeltaThreshold) {
-            // Movement detected → reset stillness
             lastStillnessTime = 0L
         }
 
-        // ---------- FREE FALL DETECTION ----------
-        if (acceleration < freeFallThreshold) {
-            lastFreeFallTime = now
-            Log.d("FALL", "Free fall detected: $acceleration")
-        }
-
-        // ---------- IMPACT DETECTION ----------
+        // ------- IMPACT DETECTION -------
         if (acceleration > impactThreshold) {
             lastImpactTime = now
             Log.d("IMPACT", "Impact detected: $acceleration")
         }
 
-        // ---------- FALL DECISION LOGIC ----------
-        val fallToImpactDelay = lastImpactTime - lastFreeFallTime
-        val stillnessDuration = if (lastStillnessTime > 0) now - lastStillnessTime else 0
+        // ------- COOLDOWN TO PREVENT SPAM -------
+        if (now - lastFallTriggeredTime < fallCooldown) return
+
+        // ------- FALL DECISION LOGIC -------
+        val stillnessDuration =
+            if (lastStillnessTime > 0) now - lastStillnessTime else 0
 
         val isFall =
-            lastFreeFallTime > 0 &&
-                    lastImpactTime > lastFreeFallTime &&
-                    fallToImpactDelay in 0..maxDelayBetweenFallAndImpact &&
+            lastImpactTime > 0 &&
                     stillnessDuration > requiredStillnessTime
 
         if (isFall) {
             Log.d("FALL", "FALL DETECTED — Triggering callback")
+
+            lastFallTriggeredTime = now
             onFallDetected()
 
-            // Reset all
-            lastFreeFallTime = 0
-            lastImpactTime = 0
-            lastStillnessTime = 0
+            // Reset states
+            lastImpactTime = 0L
+            lastStillnessTime = 0L
         }
     }
 
