@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
 import android.util.Log
 import androidx.health.services.client.HealthServices
+import com.example.eldercaremonitor.presentation.FallCheckScreen
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.presentation.utils.NotificationHelper
 import com.example.eldercaremonitor.sensors.HeartRateManager
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var vibrateWarning: VibrationHelper
     private lateinit var showWatchRemovedNotification: NotificationHelper
     private lateinit var sendWatchRemovedAlert: AlertService
+    private lateinit var sendFallDetectedAlert: AlertService
 
     private val userId = "elder_001"
 
@@ -42,6 +44,7 @@ class MainActivity : ComponentActivity() {
         showWatchRemovedNotification = NotificationHelper(this)//-----NOT USING IT RIGHT NOW-----
         sendWatchRemovedAlert = AlertService()
         showFallDetectedNotification = NotificationHelper(this)
+        sendFallDetectedAlert = AlertService()
 
         val measureClient = HealthServices.getClient(this).measureClient
 
@@ -88,7 +91,7 @@ class MainActivity : ComponentActivity() {
                 onFallDetected = {
                     vibrateWarning.vibrate()
                     Log.d("FALL", "Fall detected!")
-                    sendWatchRemovedAlert.sendWatchRemovedAlert("FALL $userId")
+                    sendFallDetectedAlert.sendFallDetectedAlert("FALL DETECTED: $userId")
                     showFallDetectedNotification.showFallDetectedNotification()
                 }
             )
@@ -170,7 +173,5 @@ class MainActivity : ComponentActivity() {
         fallDetectionManager.stop()
     }
 }
-
-
 
 
