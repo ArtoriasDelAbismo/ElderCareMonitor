@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                 context = this@MainActivity,
                 onFallDetected = {
                     vibrateWarning.vibrate()
-                    Log.d("FALL", "Fall detected!")
+                    Log.d("FALL", "Calling for help...")
                     showFallCheckScreen = true
                 }
             )
