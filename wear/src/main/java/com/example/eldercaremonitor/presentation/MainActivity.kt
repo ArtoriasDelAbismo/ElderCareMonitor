@@ -51,8 +51,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             var hrText by remember { mutableStateOf("Waiting...") }
             var wearingText by remember { mutableStateOf("Detecting...") }
+            var showFallCheckScreen by remember { mutableStateOf(false) }
 
-            // Heart Rate Manager
+            // HEART RATE MANAGER
 
             heartRateManager = HeartRateManager(
                 measureClient = measureClient,
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            // Wearing State Manager
+            // WEARING STATE MANAGER
 
             wearingManager = remember {
                 WearingStateManager(
@@ -84,19 +85,18 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            // Fall Detection Manager
+            // FALL DETECTION MANAGER
 
             fallDetectionManager = FallDetectionManager(
                 context = this@MainActivity,
                 onFallDetected = {
                     vibrateWarning.vibrate()
                     Log.d("FALL", "Fall detected!")
-                    sendFallDetectedAlert.sendFallDetectedAlert("FALL DETECTED: $userId")
-                    showFallDetectedNotification.showFallDetectedNotification()
+                    showFallCheckScreen = true
                 }
             )
 
-            // Request BODY_SENSORS permission
+            // REQUEST BODY_SENSORS PERMISSION
 
             val permissionLauncher =
                 rememberLauncherForActivityResult(
@@ -128,8 +128,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-
-            // Request POST_NOTIFICATIONS permission (Android 13+)
+            // REQUEST POST NOTIFICATIONS PERMISSION
 
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(
@@ -154,18 +153,36 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-
-            // Compose UI
+            // COMPOSE UI
 
             ElderCareMonitorTheme {
-                HeartRateScreen(
-                    hr = hrText,
-                    wearingStatus = wearingText
-                )
+                if (showFallCheckScreen) {
+                    FallCheckScreen(
+                        onImOk = {
+                            showFallCheckScreen = false
+                            fallDetectionManager.reset()
+                        },
+                        onNeedHelp = {
+                            sendFallDetectedAlert.sendFallDetectedAlert("FALL DETECTED!, $userId needs immediate attention.")
+                            showFallDetectedNotification.showFallDetectedNotification()
+                            showFallCheckScreen = false
+                            fallDetectionManager.reset()
+                        }
+                    )
+                } else {
+                    HeartRateScreen(
+                        hr = hrText,
+                        wearingStatus = wearingText,
+                        onDebugFall = {
+                            showFallCheckScreen = true
+                        }
+                    )
+                }
             }
         }
-    }
 
+
+    }
     override fun onDestroy() {
         super.onDestroy()
         heartRateManager.stop()
@@ -173,5 +190,4 @@ class MainActivity : ComponentActivity() {
         fallDetectionManager.stop()
     }
 }
-
 

@@ -95,4 +95,11 @@ class FallDetectionManager(
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    fun reset() {
+        lastImpactTime = 0L
+        lastStillnessTime = 0L
+        previousAcceleration = 9.8f
+        Log.d("FALL", "Fall reset")
+    }
 }
