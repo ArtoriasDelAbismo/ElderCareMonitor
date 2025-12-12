@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
 import android.util.Log
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.health.services.client.HealthServices
 import com.example.eldercaremonitor.presentation.FallCheckScreen
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
@@ -38,6 +39,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        installSplashScreen()
+
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         vibrateWarning = VibrationHelper(this)
@@ -49,8 +52,8 @@ class MainActivity : ComponentActivity() {
         val measureClient = HealthServices.getClient(this).measureClient
 
         setContent {
-            var hrText by remember { mutableStateOf("Waiting...") }
-            var wearingText by remember { mutableStateOf("Detecting...") }
+            var hrText by remember { mutableStateOf("Waiting HR") }
+            var wearingText by remember { mutableStateOf("Status: Detecting") }
             var showFallCheckScreen by remember { mutableStateOf(false) }
 
             // HEART RATE MANAGER
@@ -58,7 +61,7 @@ class MainActivity : ComponentActivity() {
             heartRateManager = HeartRateManager(
                 measureClient = measureClient,
                 onHeartRateChanged = { bpm ->
-                    hrText = "❤️ $bpm bpm"
+                    hrText = "$bpm"
                 },
                 onDangerousHeartRate = { bpm ->
                     hrText = "⚠️ DANGEROUS HR: $bpm bpm"
@@ -121,8 +124,8 @@ class MainActivity : ComponentActivity() {
                     heartRateManager.start()
                     wearingManager.start()
                     fallDetectionManager.start()
-                    hrText = "Waiting HR..."
-                    wearingText = "Waiting Wear..."
+                    //hrText = "Waiting HR..."
+                    //wearingText = "Waiting Wear..."
                 } else {
                     permissionLauncher.launch(Manifest.permission.BODY_SENSORS)
                 }
@@ -156,29 +159,46 @@ class MainActivity : ComponentActivity() {
             // COMPOSE UI
 
             ElderCareMonitorTheme {
-                if (showFallCheckScreen) {
-                    FallCheckScreen(
-                        onImOk = {
-                            showFallCheckScreen = false
-                            fallDetectionManager.reset()
-                        },
-                        onNeedHelp = {
-                            sendFallDetectedAlert.sendFallDetectedAlert("FALL DETECTED!, $userId needs immediate attention.")
-                            showFallDetectedNotification.showFallDetectedNotification()
-                            showFallCheckScreen = false
-                            fallDetectionManager.reset()
+
+                var showFullSplash by remember { mutableStateOf(true) }
+
+                when {
+                    // 1. Show full screen splash first
+                    showFullSplash -> {
+                        FullScreenSplash {
+                            showFullSplash = false
                         }
-                    )
-                } else {
-                    HeartRateScreen(
-                        hr = hrText,
-                        wearingStatus = wearingText,
-                        onDebugFall = {
-                            showFallCheckScreen = true
-                        }
-                    )
+                    }
+
+                    // 2. Show fall check UI if needed
+                    showFallCheckScreen -> {
+                        FallCheckScreen(
+                            onImOk = {
+                                showFallCheckScreen = false
+                                fallDetectionManager.reset()
+                            },
+                            onNeedHelp = {
+                                sendFallDetectedAlert.sendFallDetectedAlert("FALL DETECTED!, $userId needs immediate attention.")
+                                showFallDetectedNotification.showFallDetectedNotification()
+                                showFallCheckScreen = false
+                                fallDetectionManager.reset()
+                            }
+                        )
+                    }
+
+                    // 3. Default → main heart rate screen
+                    else -> {
+                        HeartRateScreen(
+                            hr = hrText,
+                            wearingStatus = wearingText,
+                            onDebugFall = {
+                                showFallCheckScreen = true
+                            }
+                        )
+                    }
                 }
             }
+
         }
 
 

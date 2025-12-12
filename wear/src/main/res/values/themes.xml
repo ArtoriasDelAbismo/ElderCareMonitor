@@ -2,4 +2,15 @@
     <style name="Theme.WearOS.Basic" parent="@android:style/Theme.DeviceDefault">
         <item name="android:windowBackground">@android:color/black</item>
     </style>
+
+    <style name="Theme.WearOS.Splash" parent="Theme.SplashScreen">
+        <!-- Splash background -->
+        <item name="windowSplashScreenBackground">@color/black</item>
+
+        <!-- Move to your normal UI theme afterwards -->
+        <item name="postSplashScreenTheme">@style/Theme.WearOS.Basic</item>
+    </style>
 </resources>
+
+
+

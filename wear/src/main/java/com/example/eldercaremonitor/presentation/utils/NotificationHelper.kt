@@ -76,7 +76,7 @@ class NotificationHelper(private val context: Context){
 
         val notification = NotificationCompat.Builder(context, "fall_alerts")
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("Fall Detected")
+            .setContentTitle("Calling for help...")
             .setContentText("A fall has been detected on the device.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
