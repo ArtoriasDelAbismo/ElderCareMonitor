@@ -1,4 +1,5 @@
 package com.example.eldercaremonitor.presentation
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -21,18 +22,15 @@ import com.example.eldercaremonitor.sensors.WearingStateManager
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
 import com.example.eldercaremonitor.sensors.FallDetectionManager
 import data.network.AlertService
+import safety.SafetyEngine
 
 
 class MainActivity : ComponentActivity() {
-
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
     private lateinit var fallDetectionManager: FallDetectionManager
-    private lateinit var showFallDetectedNotification: NotificationHelper
-    private lateinit var vibrateWarning: VibrationHelper
-    private lateinit var showWatchRemovedNotification: NotificationHelper
-    private lateinit var sendWatchRemovedAlert: AlertService
-    private lateinit var sendFallDetectedAlert: AlertService
+    private lateinit var SafetyEngine: SafetyEngine
+
 
     private val userId = "elder_001"
 
@@ -42,12 +40,15 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
 
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        SafetyEngine = SafetyEngine(
+            // ----SEND PARAMETERS TO SAFETY ENGINE----
+            vibrateWarning = VibrationHelper(this),
+            showWatchRemovedNotification = NotificationHelper(this),//-----NOT USING IT RIGHT NOW-----
+            sendWatchRemovedAlert = AlertService(),
+            showFallDetectedNotification = NotificationHelper(this),
+            sendFallDetectedAlert = AlertService(),
+        )
 
-        vibrateWarning = VibrationHelper(this)
-        showWatchRemovedNotification = NotificationHelper(this)//-----NOT USING IT RIGHT NOW-----
-        sendWatchRemovedAlert = AlertService()
-        showFallDetectedNotification = NotificationHelper(this)
-        sendFallDetectedAlert = AlertService()
 
         val measureClient = HealthServices.getClient(this).measureClient
 
@@ -81,9 +82,7 @@ class MainActivity : ComponentActivity() {
                         Log.d("WEARING", "Watch was removed!")
 
                         wearingText = "Status: ⚠️ Watch removed!"
-                        vibrateWarning.vibrate()
                         heartRateManager.stop()
-                        sendWatchRemovedAlert.sendWatchRemovedAlert(userId)
                     }
                 )
             }
@@ -93,7 +92,6 @@ class MainActivity : ComponentActivity() {
             fallDetectionManager = FallDetectionManager(
                 context = this@MainActivity,
                 onFallDetected = {
-                    vibrateWarning.vibrate()
                     Log.d("FALL", "Calling for help...")
                     showFallCheckScreen = true
                 }
@@ -178,8 +176,6 @@ class MainActivity : ComponentActivity() {
                                 fallDetectionManager.reset()
                             },
                             onNeedHelp = {
-                                sendFallDetectedAlert.sendFallDetectedAlert("FALL DETECTED!, $userId needs immediate attention.")
-                                showFallDetectedNotification.showFallDetectedNotification()
                                 showFallCheckScreen = false
                                 fallDetectionManager.reset()
                             }
@@ -203,6 +199,7 @@ class MainActivity : ComponentActivity() {
 
 
     }
+
     override fun onDestroy() {
         super.onDestroy()
         heartRateManager.stop()
