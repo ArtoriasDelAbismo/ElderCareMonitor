@@ -93,9 +93,9 @@ fun HeartRateScreen(hr: String, wearingStatus: String, onDebugFall: () -> Unit) 
 
         // BUTTON TO SIMULATE FALL
 
-        //Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
-        //    Text(text = "Simulate fall")
-        //}
+        Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
+            Text(text = "Simulate fall")
+        }
     }
 }
 

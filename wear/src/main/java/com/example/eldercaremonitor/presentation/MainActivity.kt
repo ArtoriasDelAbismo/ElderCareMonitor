@@ -23,6 +23,7 @@ import com.example.eldercaremonitor.presentation.utils.VibrationHelper
 import com.example.eldercaremonitor.sensors.FallDetectionManager
 import data.network.AlertService
 import safety.SafetyEngine
+import safety.SafetyEvent
 
 
 class MainActivity : ComponentActivity() {
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
                     hrText = "$bpm"
                 },
                 onDangerousHeartRate = { bpm ->
-                    hrText = "⚠️ DANGEROUS HR: $bpm bpm"
+                    SafetyEngine.onEvent(SafetyEvent.DangerousHeartRate(bpm))
                 }
             )
 
@@ -79,9 +80,7 @@ class MainActivity : ComponentActivity() {
                         heartRateManager.start()
                     },
                     onRemoved = {
-                        Log.d("WEARING", "Watch was removed!")
-
-                        wearingText = "Status: ⚠️ Watch removed!"
+                        SafetyEngine.onEvent(SafetyEvent.WatchRemoved)
                         heartRateManager.stop()
                     }
                 )
@@ -92,7 +91,7 @@ class MainActivity : ComponentActivity() {
             fallDetectionManager = FallDetectionManager(
                 context = this@MainActivity,
                 onFallDetected = {
-                    Log.d("FALL", "Calling for help...")
+                    SafetyEngine.onEvent(SafetyEvent.FallDetected)
                     showFallCheckScreen = true
                 }
             )
@@ -161,28 +160,32 @@ class MainActivity : ComponentActivity() {
                 var showFullSplash by remember { mutableStateOf(true) }
 
                 when {
-                    // 1. Show full screen splash first
+                    //  Show full screen splash first
                     showFullSplash -> {
                         FullScreenSplash {
                             showFullSplash = false
                         }
                     }
 
-                    // 2. Show fall check UI if needed
+                    //  Show fall check UI if needed
                     showFallCheckScreen -> {
                         FallCheckScreen(
                             onImOk = {
                                 showFallCheckScreen = false
                                 fallDetectionManager.reset()
+
+                                SafetyEngine.onEvent(SafetyEvent.UserIsOk)
                             },
                             onNeedHelp = {
                                 showFallCheckScreen = false
                                 fallDetectionManager.reset()
+
+                                SafetyEngine.onEvent(SafetyEvent.UserNeedsHelp)
                             }
                         )
                     }
 
-                    // 3. Default → main heart rate screen
+                    //  Default → main heart rate screen
                     else -> {
                         HeartRateScreen(
                             hr = hrText,
