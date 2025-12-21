@@ -2,7 +2,9 @@ package com.example.eldercaremonitor.presentation
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,10 +15,16 @@ import androidx.wear.compose.material.Text
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import com.example.eldercaremonitor.R
 
 @Composable
-fun HeartRateScreen(hr: String, wearingStatus: String, onDebugFall: () -> Unit) {
+fun HeartRateScreen(
+    hr: String,
+    wearingStatus: String,
+    onDebugFall: () -> Unit,
+    onPanic: () -> Unit
+) {
 
     val hasBpm = hr.toIntOrNull() != null && hr.toInt() > 0
 
@@ -91,11 +99,27 @@ fun HeartRateScreen(hr: String, wearingStatus: String, onDebugFall: () -> Unit) 
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        Button(
+            onClick = onPanic,
+            modifier = Modifier
+                .fillMaxWidth()
+                .size(56.dp)
+                .border(1.dp, Color.Red, CircleShape),
+            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red)
+        ) {
+            Text(
+                text = "HELP",
+                fontSize = 20.sp,
+                color = Color.White
+            )
+        }
+
+
         // BUTTON TO SIMULATE FALL
 
-        Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
-            Text(text = "Simulate fall")
-        }
+        //Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
+        //    Text(text = "Simulate fall")
+        //}
     }
 }
 

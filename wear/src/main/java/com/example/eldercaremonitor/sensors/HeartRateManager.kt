@@ -12,7 +12,7 @@ class HeartRateManager(
 ) {
 
     private var zeroCount = 0            // counts consecutive 0 BPM readings
-    private val ZERO_LIMIT = 3           // ignore isolated 0 BPM unless repeated
+    private val zeroLimit = 3           // ignore isolated 0 BPM unless repeated
 
     private val callback = object : MeasureCallback {
         override fun onDataReceived(data: DataPointContainer) {
@@ -26,11 +26,11 @@ class HeartRateManager(
                 zeroCount++
                 Log.d("HEART", "Zero detected: $zeroCount")
 
-                if (zeroCount < ZERO_LIMIT) {
+                if (zeroCount < zeroLimit) {
                     // Ignore initial zeros
                     return
                 }
-                // If ZERO_LIMIT reached, accept zero as a valid reading
+                // If zeroLimit reached, accept zero as a valid reading
             } else {
                 zeroCount = 0 // reset when valid BPM appears
             }
@@ -43,7 +43,7 @@ class HeartRateManager(
             // -------------------------
             // Dangerous heart rate detection
             // -------------------------
-            if (bpm > 0 && (bpm > HIGH_BPM_THRESHOLD || bpm < LOW_BPM_THRESHOLD)) {
+            if (bpm > 0 && (bpm !in LOW_BPM_THRESHOLD..HIGH_BPM_THRESHOLD)) {
                 onDangerousHeartRate(bpm)
             }
 

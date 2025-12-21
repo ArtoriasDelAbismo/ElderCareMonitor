@@ -24,6 +24,8 @@ sealed class SafetyEvent {
     object UserIsOk : SafetyEvent()
     object UserNeedsHelp : SafetyEvent()
 
+    object PanicButtonPressed : SafetyEvent()
+
 }
 
 // THRESHOLDS AND CONSTANTS
@@ -37,11 +39,14 @@ private const val FALL_DETECTED_CONFIRMATION_WINDOW = 5000
 
 class SafetyEngine(
     //----RECEIVES PARAMETERS FROM MAIN ACTIVITY----
+
     private val vibrateWarning: VibrationHelper,
     private val showWatchRemovedNotification: NotificationHelper,
-    private val sendWatchRemovedAlert: AlertService,
     private val showFallDetectedNotification: NotificationHelper,
-    private val sendFallDetectedAlert: AlertService,
+    private val alertService: AlertService,
+    private val userId: String
+
+
 ) {
     private var lastAlertTimestamp: Long = 0L
     private var pendingAlertJob: Job? = null
@@ -86,6 +91,13 @@ class SafetyEngine(
                 )
             }
 
+            is SafetyEvent.PanicButtonPressed -> {
+                triggerAlert(
+                    AlertType.PANIC_BUTTON,
+                    "⚠️\uFE0F Panic button pressed"
+                )
+            }
+
             else -> Unit
         }
 
@@ -105,7 +117,7 @@ class SafetyEngine(
     // ----CREATE ALERT TYPES SO TRIGGER ALERT DECIDES WHICH ONE TO CALL----
 
     enum class AlertType {
-        FALL, WATCH_REMOVED, DANGEROUS_HR
+        FALL, WATCH_REMOVED, DANGEROUS_HR, PANIC_BUTTON
     }
 
     private fun triggerAlert(
@@ -119,17 +131,22 @@ class SafetyEngine(
         when (type) {
             AlertType.FALL -> {
                 showFallDetectedNotification.showFallDetectedNotification()
-                sendFallDetectedAlert.sendFallDetectedAlert(message)
+                alertService.sendFallDetectedAlert(message)
             }
 
             AlertType.WATCH_REMOVED -> {
                 showWatchRemovedNotification.showWatchRemovedNotification()
-                sendWatchRemovedAlert.sendWatchRemovedAlert(message)
+                alertService.sendWatchRemovedAlert(message)
             }
 
             AlertType.DANGEROUS_HR -> {
                 vibrateWarning.vibrate()
 
+            }
+
+            AlertType.PANIC_BUTTON -> {
+                vibrateWarning.vibrate()
+                alertService.panicButtonPressed(message)
             }
 
         }

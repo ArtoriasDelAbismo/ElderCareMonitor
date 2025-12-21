@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
     private lateinit var fallDetectionManager: FallDetectionManager
-    private lateinit var SafetyEngine: SafetyEngine
+    private lateinit var safetyEngine: SafetyEngine
 
 
     private val userId = "elder_001"
@@ -41,13 +41,12 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
 
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        SafetyEngine = SafetyEngine(
-            // ----SEND PARAMETERS TO SAFETY ENGINE----
+        safetyEngine = SafetyEngine(
             vibrateWarning = VibrationHelper(this),
-            showWatchRemovedNotification = NotificationHelper(this),//-----NOT USING IT RIGHT NOW-----
-            sendWatchRemovedAlert = AlertService(),
+            showWatchRemovedNotification = NotificationHelper(this),
             showFallDetectedNotification = NotificationHelper(this),
-            sendFallDetectedAlert = AlertService(),
+            alertService = AlertService(),
+            userId = userId
         )
 
 
@@ -66,7 +65,7 @@ class MainActivity : ComponentActivity() {
                     hrText = "$bpm"
                 },
                 onDangerousHeartRate = { bpm ->
-                    SafetyEngine.onEvent(SafetyEvent.DangerousHeartRate(bpm))
+                    safetyEngine.onEvent(SafetyEvent.DangerousHeartRate(bpm))
                 }
             )
 
@@ -80,7 +79,7 @@ class MainActivity : ComponentActivity() {
                         heartRateManager.start()
                     },
                     onRemoved = {
-                        SafetyEngine.onEvent(SafetyEvent.WatchRemoved)
+                        safetyEngine.onEvent(SafetyEvent.WatchRemoved)
                         heartRateManager.stop()
                     }
                 )
@@ -91,7 +90,7 @@ class MainActivity : ComponentActivity() {
             fallDetectionManager = FallDetectionManager(
                 context = this@MainActivity,
                 onFallDetected = {
-                    SafetyEngine.onEvent(SafetyEvent.FallDetected)
+                    safetyEngine.onEvent(SafetyEvent.FallDetected)
                     showFallCheckScreen = true
                 }
             )
@@ -174,13 +173,13 @@ class MainActivity : ComponentActivity() {
                                 showFallCheckScreen = false
                                 fallDetectionManager.reset()
 
-                                SafetyEngine.onEvent(SafetyEvent.UserIsOk)
+                                safetyEngine.onEvent(SafetyEvent.UserIsOk)
                             },
                             onNeedHelp = {
                                 showFallCheckScreen = false
                                 fallDetectionManager.reset()
 
-                                SafetyEngine.onEvent(SafetyEvent.UserNeedsHelp)
+                                safetyEngine.onEvent(SafetyEvent.UserNeedsHelp)
                             }
                         )
                     }
@@ -192,6 +191,9 @@ class MainActivity : ComponentActivity() {
                             wearingStatus = wearingText,
                             onDebugFall = {
                                 showFallCheckScreen = true
+                            },
+                            onPanic = {
+                                safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)
                             }
                         )
                     }
