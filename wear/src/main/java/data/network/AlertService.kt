@@ -11,98 +11,58 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class AlertService {
+
+    private val client = OkHttpClient.Builder()
+        .callTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .build()
+
+    val BASE_URL = "https://forgiving-lucia-crudely.ngrok-free.dev"
     // Send alert to backend when watch is removed
-    fun sendWatchRemovedAlert(userId: String) {
-        Log.d("NETWORK", "Calling backend alert API")
 
-        val client = OkHttpClient()
-        val json = JSONObject()
-        json.put("userId", userId)
-        json.put("timestamp", System.currentTimeMillis())
+    private fun sendAlert(
+        userId: String,
+        endpoint: String,
+        logTag: String
+    ) {
+        Log.d("NETWORK", "Calling backend alert API: $logTag")
 
-
-        val requestBody = json.toString()
-            .toRequestBody("application/json; charset=utf-8".toMediaType())
-
-        val request = Request.Builder()
-            .url("https://forgiving-lucia-crudely.ngrok-free.dev/api/alert/watch-removed")
-            .post(requestBody)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e("NETWORK", "Failed to call backend", e)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                Log.d("NETWORK", "Backend response code: ${response.code}")
-                response.close()
-            }
-        })
-    }
-
-    // Send alert to backend when fall is detected
-
-    fun sendFallDetectedAlert(userId: String) {
-        Log.d("NETWORK", "Calling backend alert API")
-
-        val client = OkHttpClient()
-        val json = JSONObject()
-        json.put("userId", userId)
-        json.put("timestamp", System.currentTimeMillis())
-
+        val json = JSONObject().apply {
+            put("userId", userId)
+            put("timestamp", System.currentTimeMillis())
+        }
 
         val requestBody = json.toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val request = Request.Builder()
-            .url("https://forgiving-lucia-crudely.ngrok-free.dev/api/alert/fall-detected")
+            .url(endpoint)
             .post(requestBody)
             .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e("NETWORK", "Failed to call backend", e)
+                Log.e("NETWORK", "Failed to send $logTag alert", e)
             }
 
             override fun onResponse(call: Call, response: Response) {
-                Log.d("NETWORK", "Backend response code: ${response.code}")
-                response.close()
+                response.use {
+                    Log.d("NETWORK", "$logTag response code: ${it.code}")
+                }
             }
         })
     }
 
-    fun panicButtonPressed(userId: String) {
-        Log.d("EVENT", "Panic button pressed")
-        Log.d("NETWORK", "Calling backend alert API")
+    fun sendWatchRemovedAlert(userId: String) =
+        sendAlert(userId, "$BASE_URL/api/alert/watch-removed", "WATCH_REMOVED")
 
+    fun sendFallDetectedAlert(userId: String) =
+        sendAlert(userId, "$BASE_URL/api/alert/fall-detected", "FALL_DETECTED")
 
-        val client = OkHttpClient()
-        val json = JSONObject()
-        json.put("userId", userId)
-        json.put("timestamp", System.currentTimeMillis())
-
-        val requestBody = json.toString()
-            .toRequestBody("application/json; charset=utf-8".toMediaType())
-
-        val request = Request.Builder()
-            .url("https://forgiving-lucia-crudely.ngrok-free.dev/api/alert/panic-button")
-            .post(requestBody)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.d("NETWORK", "Failed to call backend")
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                Log.d("NETWORK", "Backend response code: ${response.code}")
-                response.close()
-            }
-        })
-    }
-
+    fun panicButtonPressed(userId: String) =
+        sendAlert(userId, "$BASE_URL/api/alert/panic-button", "PANIC")
 
 }
