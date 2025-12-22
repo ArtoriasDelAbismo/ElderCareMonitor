@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 
 
 sealed class SafetyEvent {
@@ -44,7 +45,9 @@ class SafetyEngine(
     private val showWatchRemovedNotification: NotificationHelper,
     private val showFallDetectedNotification: NotificationHelper,
     private val alertService: AlertService,
-    private val userId: String
+    private val userId: String,
+
+    private val _isWearing: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
 
 ) {
@@ -74,11 +77,17 @@ class SafetyEngine(
             }
 
             is SafetyEvent.WatchRemoved -> {
+                _isWearing.value = false
                 triggerAlert(
                     AlertType.WATCH_REMOVED,
                     "⚠️\uFE0F Watch removed"
                 )
             }
+
+            is SafetyEvent.WatchWornAgain -> {
+                _isWearing.value = true
+            }
+
 
             is SafetyEvent.UserIsOk -> {
                 cancelPendingAlerts()

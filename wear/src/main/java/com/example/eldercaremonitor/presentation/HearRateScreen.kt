@@ -20,19 +20,16 @@ import com.example.eldercaremonitor.R
 
 @Composable
 fun HeartRateScreen(
-    hr: String,
+    hr: Int?,
     wearingStatus: String,
     onDebugFall: () -> Unit,
     onPanic: () -> Unit
 ) {
 
-    val hasBpm = hr.toIntOrNull() != null && hr.toInt() > 0
+    val hasBpm = hr != null && hr > 0
 
-    val bpmFontSize = if (hr.toIntOrNull() != null && hr.toInt() > 0) {
-        48.sp   // LARGE size when there's a real BPM reading
-    } else {
-        24.sp   // SMALL size when there's no reading
-    }
+    val bpmFontSize = if (hasBpm) 48.sp else 24.sp
+
 
     Column(
         modifier = Modifier
@@ -60,7 +57,7 @@ fun HeartRateScreen(
             ) {
 
                 Text(
-                    text = hr,
+                    text = hr.toString(),
                     textAlign = TextAlign.Center,
                     fontSize = bpmFontSize,
                     color = Color.White
@@ -103,7 +100,7 @@ fun HeartRateScreen(
             onClick = onPanic,
             modifier = Modifier
                 .fillMaxWidth()
-                .size(56.dp)
+                .height(56.dp)
                 .border(1.dp, Color.Red, CircleShape),
             colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red)
         ) {

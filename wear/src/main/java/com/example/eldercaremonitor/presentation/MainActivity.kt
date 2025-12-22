@@ -187,7 +187,7 @@ class MainActivity : ComponentActivity() {
                     //  Default → main heart rate screen
                     else -> {
                         HeartRateScreen(
-                            hr = hrText,
+                            hr = hrText.toIntOrNull(),
                             wearingStatus = wearingText,
                             onDebugFall = {
                                 showFallCheckScreen = true
