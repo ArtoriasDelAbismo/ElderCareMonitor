@@ -1,5 +1,6 @@
 package com.example.eldercaremonitor.presentation
 
+import android.content.ClipData
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Text
 
@@ -25,25 +28,31 @@ fun EmergencyContactsScreen(
     contacts: List<EmergencyContact>,
     onCallContact: (EmergencyContact) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ScalingLazyColumn(
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
-
     ) {
-        Text(
-            text = "Emergency Contacts",
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        contacts.forEach { contact ->
+
+        item {
+            Text(
+                text = "Emergency Contacts",
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
+        items(contacts) { contact ->
             Button(
-                onClick = { onCallContact(contact) },
+                onClick = {
+                    onCallContact(contact)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(52.dp)
                     .padding(vertical = 4.dp)
             ) {
                 Text(

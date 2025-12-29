@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,6 +52,13 @@ class MainActivity : ComponentActivity() {
             var hrText by remember { mutableStateOf<String?>(null) }
             var wearingText by remember { mutableStateOf("Status: Detecting") }
             var showFallCheckScreen by remember { mutableStateOf(false) }
+            val emergencyContacts = remember {
+                listOf(
+                    EmergencyContact("Ana", "1234567890"),
+                    EmergencyContact("Freddy", "0987654321"),
+                    EmergencyContact("Tom", "0987654322"),
+                )
+            }
 
             // HEART RATE MANAGER
             heartRateManager = HeartRateManager(
@@ -148,11 +156,20 @@ class MainActivity : ComponentActivity() {
                     }
 
                     else -> {
-                        HeartRateScreen(
-                            hr = hrText?.toIntOrNull(),
+                        PagerScreen(
+                            heartRate = hrText?.toIntOrNull(),
                             wearingStatus = wearingText,
-                            onDebugFall = {
-                                showFallCheckScreen = true
+                            contacts = emergencyContacts,
+                            onCallContact = { contact ->
+                                Log.d("EMERGENCY", "Calling ${contact.name}")
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Calling ${contact.name}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                // - launch call intent
+                                // - send backend alert
+                                // - send WhatsApp via Twilio
                             },
                             onPanic = {
                                 safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)
