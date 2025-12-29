@@ -1,5 +1,6 @@
 package safety
 
+import android.util.Log
 import com.example.eldercaremonitor.presentation.utils.NotificationHelper
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
 import data.network.AlertService
@@ -133,7 +134,14 @@ class SafetyEngine(
         type: AlertType,
         message: String
     ) {
-        if (!canAlert()) return
+
+        val bypassCooldown = type == AlertType.WATCH_REMOVED
+
+        Log.d("ALERT", "Triggering alert: $type")
+        if (!bypassCooldown && !canAlert()) {
+            Log.d("ALERT", "Alert suppressed due to cooldown")
+            return
+        }
         lastAlertTimestamp = System.currentTimeMillis()
         pendingAlertJob?.cancel()
         vibrateWarning.vibrate()

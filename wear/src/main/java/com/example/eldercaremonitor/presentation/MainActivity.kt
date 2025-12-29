@@ -10,28 +10,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
-import androidx.core.content.ContextCompat
-import android.util.Log
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.health.services.client.HealthServices
-import com.example.eldercaremonitor.presentation.FallCheckScreen
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.presentation.utils.NotificationHelper
-import com.example.eldercaremonitor.sensors.HeartRateManager
-import com.example.eldercaremonitor.sensors.WearingStateManager
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
 import com.example.eldercaremonitor.sensors.FallDetectionManager
+import com.example.eldercaremonitor.sensors.HeartRateManager
+import com.example.eldercaremonitor.sensors.WearingStateManager
 import data.network.AlertService
 import safety.SafetyEngine
 import safety.SafetyEvent
 
-
 class MainActivity : ComponentActivity() {
+
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
     private lateinit var fallDetectionManager: FallDetectionManager
     private lateinit var safetyEngine: SafetyEngine
-
 
     private val userId = "elder_001"
 
@@ -39,8 +35,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         installSplashScreen()
-
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         safetyEngine = SafetyEngine(
             vibrateWarning = VibrationHelper(this),
             showWatchRemovedNotification = NotificationHelper(this),
@@ -49,20 +45,18 @@ class MainActivity : ComponentActivity() {
             userId = userId
         )
 
-
         val measureClient = HealthServices.getClient(this).measureClient
 
         setContent {
-            var hrText by remember { mutableStateOf("Waiting HR") }
+            var hrText by remember { mutableStateOf<String?>(null) }
             var wearingText by remember { mutableStateOf("Status: Detecting") }
             var showFallCheckScreen by remember { mutableStateOf(false) }
 
             // HEART RATE MANAGER
-
             heartRateManager = HeartRateManager(
                 measureClient = measureClient,
                 onHeartRateChanged = { bpm ->
-                    hrText = "$bpm"
+                    hrText = bpm.toString()
                 },
                 onDangerousHeartRate = { bpm ->
                     safetyEngine.onEvent(SafetyEvent.DangerousHeartRate(bpm))
@@ -70,15 +64,16 @@ class MainActivity : ComponentActivity() {
             )
 
             // WEARING STATE MANAGER
-
             wearingManager = remember {
                 WearingStateManager(
                     context = this@MainActivity,
                     onWorn = {
                         wearingText = "Status: Wearing ✅"
+                        safetyEngine.onEvent(SafetyEvent.WatchWornAgain)
                         heartRateManager.start()
                     },
                     onRemoved = {
+                        wearingText = "Status: Removed ❌"
                         safetyEngine.onEvent(SafetyEvent.WatchRemoved)
                         heartRateManager.stop()
                     }
@@ -86,7 +81,6 @@ class MainActivity : ComponentActivity() {
             }
 
             // FALL DETECTION MANAGER
-
             fallDetectionManager = FallDetectionManager(
                 context = this@MainActivity,
                 onFallDetected = {
@@ -95,40 +89,14 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            // REQUEST BODY_SENSORS PERMISSION
-
-            val permissionLauncher =
-                rememberLauncherForActivityResult(
-                    ActivityResultContracts.RequestPermission()
-                ) { granted ->
-                    if (granted) {
-                        heartRateManager.start()
-                        wearingManager.start()
-                        fallDetectionManager.start()
-                    } else {
-                        hrText = "Permission denied"
-                        wearingText = "Permission denied"
-                    }
-                }
-
+            // 🔑 START SENSORS IMMEDIATELY
             LaunchedEffect(Unit) {
-                if (ContextCompat.checkSelfPermission(
-                        this@MainActivity,
-                        Manifest.permission.BODY_SENSORS
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    heartRateManager.start()
-                    wearingManager.start()
-                    fallDetectionManager.start()
-                    //hrText = "Waiting HR..."
-                    //wearingText = "Waiting Wear..."
-                } else {
-                    permissionLauncher.launch(Manifest.permission.BODY_SENSORS)
-                }
+                heartRateManager.start()
+                wearingManager.start()
+                fallDetectionManager.start()
             }
 
-            // REQUEST POST NOTIFICATIONS PERMISSION
-
+            // POST NOTIFICATIONS PERMISSION
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
@@ -144,50 +112,44 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                        PackageManager.PERMISSION_GRANTED
+                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED
                     ) {
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        notificationPermissionLauncher.launch(
+                            Manifest.permission.POST_NOTIFICATIONS
+                        )
                     }
                 }
             }
 
-            // COMPOSE UI
-
+            // UI
             ElderCareMonitorTheme {
 
                 var showFullSplash by remember { mutableStateOf(true) }
 
                 when {
-                    //  Show full screen splash first
                     showFullSplash -> {
-                        FullScreenSplash {
-                            showFullSplash = false
-                        }
+                        FullScreenSplash { showFullSplash = false }
                     }
 
-                    //  Show fall check UI if needed
                     showFallCheckScreen -> {
                         FallCheckScreen(
                             onImOk = {
                                 showFallCheckScreen = false
                                 fallDetectionManager.reset()
-
                                 safetyEngine.onEvent(SafetyEvent.UserIsOk)
                             },
                             onNeedHelp = {
                                 showFallCheckScreen = false
                                 fallDetectionManager.reset()
-
                                 safetyEngine.onEvent(SafetyEvent.UserNeedsHelp)
                             }
                         )
                     }
 
-                    //  Default → main heart rate screen
                     else -> {
                         HeartRateScreen(
-                            hr = hrText.toIntOrNull(),
+                            hr = hrText?.toIntOrNull(),
                             wearingStatus = wearingText,
                             onDebugFall = {
                                 showFallCheckScreen = true
@@ -199,10 +161,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-
         }
-
-
     }
 
     override fun onDestroy() {
@@ -212,4 +171,3 @@ class MainActivity : ComponentActivity() {
         fallDetectionManager.stop()
     }
 }
-

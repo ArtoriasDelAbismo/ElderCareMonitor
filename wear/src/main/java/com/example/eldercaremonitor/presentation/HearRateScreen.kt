@@ -96,21 +96,6 @@ fun HeartRateScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Button(
-            onClick = onPanic,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .border(1.dp, Color.Red, CircleShape),
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red)
-        ) {
-            Text(
-                text = "HELP",
-                fontSize = 20.sp,
-                color = Color.White
-            )
-        }
-
 
         // BUTTON TO SIMULATE FALL
 
