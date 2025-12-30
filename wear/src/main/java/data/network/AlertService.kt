@@ -10,6 +10,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONObject
+import safety.SafetyEngine
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -25,21 +26,22 @@ class AlertService {
 
     private fun sendAlert(
         userId: String,
-        endpoint: String,
-        logTag: String
+        logTag: String,
+        alertType: String
     ) {
         Log.d("NETWORK", "Calling backend alert API: $logTag")
 
         val json = JSONObject().apply {
             put("userId", userId)
             put("timestamp", System.currentTimeMillis())
+            put("alertType", alertType)
         }
 
         val requestBody = json.toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val request = Request.Builder()
-            .url(endpoint)
+            .url("$BASE_URL/api/alert")
             .post(requestBody)
             .build()
 
@@ -57,12 +59,11 @@ class AlertService {
     }
 
     fun sendWatchRemovedAlert(userId: String) =
-        sendAlert(userId, "$BASE_URL/api/alert/watch-removed", "WATCH_REMOVED")
+        sendAlert(userId, "watch-removed", "WATCH_REMOVED")
 
     fun sendFallDetectedAlert(userId: String) =
-        sendAlert(userId, "$BASE_URL/api/alert/fall-detected", "FALL_DETECTED")
+        sendAlert(userId, "fall-detected", "FALL_DETECTED")
 
     fun panicButtonPressed(userId: String) =
-        sendAlert(userId, "$BASE_URL/api/alert/panic-button", "PANIC")
-
+        sendAlert(userId, "panic-button", "PANIC")
 }
