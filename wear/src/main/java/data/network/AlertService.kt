@@ -22,7 +22,6 @@ class AlertService {
         .build()
 
     val BASE_URL = "https://forgiving-lucia-crudely.ngrok-free.dev"
-    // Send alert to backend when watch is removed
 
     private fun sendAlert(
         userId: String,
@@ -66,4 +65,7 @@ class AlertService {
 
     fun panicButtonPressed(userId: String) =
         sendAlert(userId, "panic-button", "PANIC")
+
+    fun sendDangerousHeartRateAlert(userId: String) =
+        sendAlert(userId, "dangerous-heart-rate", "DANGEROUS_HR")
 }

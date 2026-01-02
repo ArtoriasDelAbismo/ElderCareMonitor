@@ -5,17 +5,22 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.health.services.client.HealthServices
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.presentation.utils.NotificationHelper
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
+import com.example.eldercaremonitor.presentation.utils.panicLongPress
 import com.example.eldercaremonitor.sensors.FallDetectionManager
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
@@ -32,6 +37,8 @@ class MainActivity : ComponentActivity() {
 
     private val userId = "elder_001"
 
+    // ---- ON CREATE ----
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -42,6 +49,8 @@ class MainActivity : ComponentActivity() {
             vibrateWarning = VibrationHelper(this),
             showWatchRemovedNotification = NotificationHelper(this),
             showFallDetectedNotification = NotificationHelper(this),
+            showDangerousHeartRateNotification = NotificationHelper(this),
+            showPanicButtonPressedNotification = NotificationHelper(this),
             alertService = AlertService(),
             userId = userId
         )
@@ -131,52 +140,63 @@ class MainActivity : ComponentActivity() {
             }
 
             // UI
+
             ElderCareMonitorTheme {
 
-                var showFullSplash by remember { mutableStateOf(true) }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .panicLongPress {
+                            safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)
+                        }
+                ) {
+                    var showFullSplash by remember { mutableStateOf(true) }
 
-                when {
-                    showFullSplash -> {
-                        FullScreenSplash { showFullSplash = false }
+                    when {
+                        showFullSplash -> {
+                            FullScreenSplash { showFullSplash = false }
+                        }
+
+                        showFallCheckScreen -> {
+                            FallCheckScreen(
+                                onImOk = {
+                                    showFallCheckScreen = false
+                                    fallDetectionManager.reset()
+                                    safetyEngine.onEvent(SafetyEvent.UserIsOk)
+                                },
+                                onNeedHelp = {
+                                    showFallCheckScreen = false
+                                    fallDetectionManager.reset()
+                                    safetyEngine.onEvent(SafetyEvent.UserNeedsHelp)
+                                }
+                            )
+                        }
+
+                        else -> {
+                            PagerScreen(
+                                heartRate = hrText?.toIntOrNull(),
+                                wearingStatus = wearingText,
+                                contacts = emergencyContacts,
+                                onCallContact = { contact ->
+                                    Log.d("EMERGENCY", "Calling ${contact.name}")
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Calling ${contact.name}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    // - launch call intent
+                                    // - send backend alert
+                                    // - send WhatsApp via Twilio
+                                },
+                                onPanic = {
+                                    safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)
+                                }
+                            )
+                        }
                     }
 
-                    showFallCheckScreen -> {
-                        FallCheckScreen(
-                            onImOk = {
-                                showFallCheckScreen = false
-                                fallDetectionManager.reset()
-                                safetyEngine.onEvent(SafetyEvent.UserIsOk)
-                            },
-                            onNeedHelp = {
-                                showFallCheckScreen = false
-                                fallDetectionManager.reset()
-                                safetyEngine.onEvent(SafetyEvent.UserNeedsHelp)
-                            }
-                        )
-                    }
-
-                    else -> {
-                        PagerScreen(
-                            heartRate = hrText?.toIntOrNull(),
-                            wearingStatus = wearingText,
-                            contacts = emergencyContacts,
-                            onCallContact = { contact ->
-                                Log.d("EMERGENCY", "Calling ${contact.name}")
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Calling ${contact.name}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                // - launch call intent
-                                // - send backend alert
-                                // - send WhatsApp via Twilio
-                            },
-                            onPanic = {
-                                safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)
-                            }
-                        )
-                    }
                 }
+
             }
         }
     }

@@ -45,6 +45,8 @@ class SafetyEngine(
     private val vibrateWarning: VibrationHelper,
     private val showWatchRemovedNotification: NotificationHelper,
     private val showFallDetectedNotification: NotificationHelper,
+    private val showDangerousHeartRateNotification: NotificationHelper,
+    private val showPanicButtonPressedNotification: NotificationHelper,
     private val alertService: AlertService,
     private val userId: String,
 
@@ -64,6 +66,7 @@ class SafetyEngine(
         when (event) {
 
             is SafetyEvent.DangerousHeartRate -> {
+                showDangerousHeartRateNotification.showDangerousHeartRateNotification()
                 triggerAlert(
                     AlertType.DANGEROUS_HR,
                     "⚠️\uFE0F Dangerous heart rate detected: ${event.bpm} bpm"
@@ -71,14 +74,13 @@ class SafetyEngine(
             }
 
             is SafetyEvent.FallDetected -> {
-                triggerAlert(
-                    AlertType.FALL,
-                    "⚠️\uFE0F Fall detected"
-                )
+                Log.d("ALERT", "Fall detected, waiting for user confirmation")
+                showFallDetectedNotification.showFallDetectedNotification()
             }
 
             is SafetyEvent.WatchRemoved -> {
                 _isWearing.value = false
+                showWatchRemovedNotification.showWatchRemovedNotification()
                 triggerAlert(
                     AlertType.WATCH_REMOVED,
                     "⚠️\uFE0F Watch removed"
@@ -102,6 +104,7 @@ class SafetyEngine(
             }
 
             is SafetyEvent.PanicButtonPressed -> {
+                showPanicButtonPressedNotification.showPanicButtonPressedNotification()
                 triggerAlert(
                     AlertType.PANIC_BUTTON,
                     "⚠️\uFE0F Panic button pressed"
@@ -147,22 +150,18 @@ class SafetyEngine(
         vibrateWarning.vibrate()
         when (type) {
             AlertType.FALL -> {
-                showFallDetectedNotification.showFallDetectedNotification()
                 alertService.sendFallDetectedAlert(message)
             }
 
             AlertType.WATCH_REMOVED -> {
-                showWatchRemovedNotification.showWatchRemovedNotification()
                 alertService.sendWatchRemovedAlert(message)
             }
 
             AlertType.DANGEROUS_HR -> {
-                vibrateWarning.vibrate()
-
+                alertService.sendDangerousHeartRateAlert(message) // finish managing the alert in the backend
             }
 
             AlertType.PANIC_BUTTON -> {
-                vibrateWarning.vibrate()
                 alertService.panicButtonPressed(message)
             }
 

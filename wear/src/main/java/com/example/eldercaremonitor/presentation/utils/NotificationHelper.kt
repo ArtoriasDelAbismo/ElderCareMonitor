@@ -11,7 +11,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
-class NotificationHelper(private val context: Context){
+class NotificationHelper(private val context: Context) {
 
     // Show notification when watch is removed
     fun showWatchRemovedNotification() { //-------NOT USING IT RIGHT NOW--------
@@ -76,11 +76,74 @@ class NotificationHelper(private val context: Context){
 
         val notification = NotificationCompat.Builder(context, "fall_alerts")
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("Calling for help...")
+            .setContentTitle("Fall Detected...")
             .setContentText("A fall has been detected on the device.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
         manager.notify(2002, notification)
-        }
     }
+
+    fun showDangerousHeartRateNotification() {
+        val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "dangerous_heart_rate_alerts",
+                "Dangerous Heart Rate Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            manager.createNotificationChannel(channel)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                Toast.makeText(context, "Notifications permission not granted", Toast.LENGTH_SHORT)
+                    .show()
+                return
+            }
+        }
+        val notification = NotificationCompat.Builder(context, "dangerous_heart_rate_alerts")
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle("Dangerous Heart Rate Detected")
+            .setContentText("Your heart rate is dangerously high.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        manager.notify(3003, notification)
+
+    }
+
+    fun showPanicButtonPressedNotification() {
+        val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "panic_button_alerts",
+                "Panic Button Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            manager.createNotificationChannel(channel)
+
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                Toast.makeText(context, "Notifications permission not granted", Toast.LENGTH_SHORT)
+                    .show()
+                return
+            }
+        }
+        val notification = NotificationCompat.Builder(context, "panic_button_alerts")
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle("Panic Button Pressed")
+            .setContentText("Calling emergency contact...")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        manager.notify(4004, notification)
+    }
+}
+
