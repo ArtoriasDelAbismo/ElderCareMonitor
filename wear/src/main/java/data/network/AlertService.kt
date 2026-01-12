@@ -29,6 +29,10 @@ class AlertService {
         alertType: String
     ) {
         Log.d("NETWORK", "Calling backend alert API: $logTag")
+        Log.e(
+            "NETWORK_DEBUG",
+            "HITTING URL: $BASE_URL/api/alert | type=$alertType"
+        )
 
         val json = JSONObject().apply {
             put("userId", userId)
