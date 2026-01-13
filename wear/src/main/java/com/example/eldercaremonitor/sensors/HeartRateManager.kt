@@ -8,7 +8,6 @@ import androidx.health.services.client.data.*
 class HeartRateManager(
     private val measureClient: MeasureClient,
     private val onHeartRateChanged: (Int) -> Unit,
-    private val onDangerousHeartRate: (Int) -> Unit
 ) {
 
     private var zeroCount = 0            // counts consecutive 0 BPM readings
@@ -40,13 +39,6 @@ class HeartRateManager(
             // -------------------------
             onHeartRateChanged(bpm)
 
-            // -------------------------
-            // Dangerous heart rate detection
-            // -------------------------
-            if (bpm > 0 && (bpm !in LOW_BPM_THRESHOLD..HIGH_BPM_THRESHOLD)) {
-                onDangerousHeartRate(bpm)
-            }
-
             Log.d("HEART", "HR = $bpm")
         }
 
@@ -67,10 +59,5 @@ class HeartRateManager(
     fun stop() {
         measureClient.unregisterMeasureCallbackAsync(DataType.HEART_RATE_BPM, callback)
         Log.d("HEART", "HeartRateManager stopped")
-    }
-
-    companion object {
-        const val HIGH_BPM_THRESHOLD = 120
-        const val LOW_BPM_THRESHOLD = 45
     }
 }

@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -74,11 +73,10 @@ class MainActivity : ComponentActivity() {
                 measureClient = measureClient,
                 onHeartRateChanged = { bpm ->
                     hrText = bpm.toString()
-                },
-                onDangerousHeartRate = { bpm ->
-                    safetyEngine.onEvent(SafetyEvent.DangerousHeartRate(bpm))
+                    safetyEngine.onEvent(SafetyEvent.HeartRate(bpm))
                 }
             )
+
 
             // WEARING STATE MANAGER
             wearingManager = remember {

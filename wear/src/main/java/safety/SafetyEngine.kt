@@ -10,13 +10,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+
+
 
 
 sealed class SafetyEvent {
 
     // ----SENSORS----
     data class HeartRate(val bpm: Int) : SafetyEvent()
-    data class DangerousHeartRate(val bpm: Int) : SafetyEvent()
+
     object FallDetected : SafetyEvent()
     object WatchRemoved : SafetyEvent()
 
@@ -38,6 +42,11 @@ const val LOW_BPM_THRESHOLD = 45
 private const val ALERT_COOLDOWN_WINDOW = 10000
 private const val WATCH_REMOVED_CONFIRMATION_WINDOW = 5000
 private const val FALL_DETECTED_CONFIRMATION_WINDOW = 5000
+private const val HIGH_HR_CONFIRMATION_WINDOW = 10_000L
+private const val LOW_HR_CONFIRMATION_WINDOW = 5_000L
+private const val HIGH_HR_RESET_HYSTERESIS = 5
+private const val LOW_HR_RESET_HYSTERESIS = 5
+
 
 class SafetyEngine(
     //----RECEIVES PARAMETERS FROM MAIN ACTIVITY----
@@ -60,18 +69,94 @@ class SafetyEngine(
     // Coroutine scope for safety operations
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    private var lastBpm: Int? = null
+    private var highHrJob: Job? = null
+    private var highHrArmed: Boolean = true // prevents repeated alerts while still high
+
+    private var lowHrJob: Job? = null
+
+    private var lowHrArmed: Boolean = true // prevents repeated alerts while still low
+
+
+
+
+
+
     //----PUBLIC ENTRY POINT----
 
     fun onEvent(event: SafetyEvent) {
         when (event) {
 
-            is SafetyEvent.DangerousHeartRate -> {
-                showDangerousHeartRateNotification.showDangerousHeartRateNotification()
-                triggerAlert(
-                    AlertType.DANGEROUS_HR,
-                    "⚠️\uFE0F Dangerous heart rate detected: ${event.bpm} bpm"
-                )
+            is SafetyEvent.HeartRate -> {
+                val bpm = event.bpm
+                lastBpm = bpm
+
+                // Re-arm once user is clearly back to normal range (hysteresis)
+                if (bpm <= (HIGH_BPM_THRESHOLD - HIGH_HR_RESET_HYSTERESIS) && bpm >= (LOW_BPM_THRESHOLD + LOW_HR_RESET_HYSTERESIS)) {
+                    lowHrArmed = true
+                    lowHrJob?.cancel()
+                    lowHrJob = null
+                    highHrArmed = true
+                    highHrJob?.cancel()
+                    highHrJob = null
+                }
+
+                // Low BPM: require sustained low HR
+                if (bpm <= LOW_BPM_THRESHOLD && lowHrArmed) {
+                    // Start confirmation timer only once
+                    if (lowHrJob == null) {
+                        lowHrJob = scope.launch {
+                            delay(LOW_HR_CONFIRMATION_WINDOW)
+                            val current = lastBpm ?: return@launch
+                            // If still low after the window, alert once
+                            if (current <= LOW_BPM_THRESHOLD && lowHrArmed) {
+                                lowHrArmed = false
+                                showDangerousHeartRateNotification.showDangerousHeartRateNotification()
+                                triggerAlert(
+                                    AlertType.DANGEROUS_HR,
+                                    "⚠️ Sustained low heart rate: $current bpm for ${LOW_HR_CONFIRMATION_WINDOW/1000}s"
+                                )
+                            }
+
+                            // allow new jobs later when re-armed
+                            lowHrJob = null
+                        }
+                    }
+                } else {
+                    // Not low anymore before confirmation finished → cancel
+                    lowHrJob?.cancel()
+                    lowHrJob = null
+                }
+
+                // High BPM: require sustained high HR
+                if (bpm >= HIGH_BPM_THRESHOLD && highHrArmed) {
+                    // Start confirmation timer only once
+                    if (highHrJob == null) {
+                        highHrJob = scope.launch {
+                            delay(HIGH_HR_CONFIRMATION_WINDOW)
+
+                            val current = lastBpm ?: return@launch
+                            // If still high after the window, alert once
+                            if (current >= HIGH_BPM_THRESHOLD && highHrArmed) {
+                                highHrArmed = false
+                                showDangerousHeartRateNotification.showDangerousHeartRateNotification()
+                                triggerAlert(
+                                    AlertType.DANGEROUS_HR,
+                                    "⚠️ Sustained high heart rate: $current bpm for ${HIGH_HR_CONFIRMATION_WINDOW/1000}s"
+                                )
+                            }
+
+                            // allow new jobs later when re-armed
+                            highHrJob = null
+                        }
+                    }
+                } else {
+                    // Not high anymore before confirmation finished → cancel
+                    highHrJob?.cancel()
+                    highHrJob = null
+                }
             }
+
 
             is SafetyEvent.FallDetected -> {
                 Log.d("ALERT", "Fall detected, waiting for user confirmation")
@@ -111,7 +196,6 @@ class SafetyEngine(
                 )
             }
 
-            else -> Unit
         }
 
     }
