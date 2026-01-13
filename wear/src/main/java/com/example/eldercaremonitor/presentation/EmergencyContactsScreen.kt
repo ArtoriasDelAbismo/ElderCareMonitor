@@ -1,6 +1,7 @@
 package com.example.eldercaremonitor.presentation
 
 import android.content.ClipData
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -29,7 +31,9 @@ fun EmergencyContactsScreen(
     onCallContact: (EmergencyContact) -> Unit
 ) {
     ScalingLazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Color(0xFF17233C)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
