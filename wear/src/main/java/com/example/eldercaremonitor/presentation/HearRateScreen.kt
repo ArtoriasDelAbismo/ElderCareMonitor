@@ -14,8 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material.Text
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
 import com.example.eldercaremonitor.R
 
 @Composable
@@ -88,13 +86,22 @@ fun HeartRateScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = wearingStatus,
-            textAlign = TextAlign.Center,
-            color = Color.White
-        )
+        if (wearingStatus == "Status: Removed ❌") {
+            Text(
+                text = wearingStatus,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
+        }
+
 
         Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "-->",
+            textAlign = TextAlign.End,
+            color = Color.White
+        )
 
 
         // BUTTON TO SIMULATE FALL
