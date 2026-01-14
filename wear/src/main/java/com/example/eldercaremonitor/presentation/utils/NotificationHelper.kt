@@ -14,7 +14,7 @@ import androidx.core.content.ContextCompat
 class NotificationHelper(private val context: Context) {
 
     // Show notification when watch is removed
-    fun showWatchRemovedNotification() { //-------NOT USING IT RIGHT NOW--------
+    fun showWatchRemovedNotification() {
         val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         // Create channel for API 26+
@@ -43,7 +43,7 @@ class NotificationHelper(private val context: Context) {
         val notification = NotificationCompat.Builder(context, "wearing_alerts")
             .setSmallIcon(android.R.drawable.stat_notify_error)
             .setContentTitle("Watch Removed")
-            .setContentText("The device is no longer being worn.")
+            .setContentText("Please put the watch back on.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
