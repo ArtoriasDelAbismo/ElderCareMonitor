@@ -164,8 +164,8 @@ class SafetyEngine(
             }
 
             is SafetyEvent.WatchRemoved -> {
-                _isWearing.value = false
                 showWatchRemovedNotification.showWatchRemovedNotification()
+                _isWearing.value = false
                 triggerAlert(
                     AlertType.WATCH_REMOVED,
                     "⚠️\uFE0F Watch removed"
