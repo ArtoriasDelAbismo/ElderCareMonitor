@@ -242,7 +242,7 @@ class SafetyEngine(
             }
 
             AlertType.DANGEROUS_HR -> {
-                alertService.sendDangerousHeartRateAlert(message) // finish managing the alert in the backend
+                alertService.sendDangerousHeartRateAlert(message) // send alert? or suggest action?
             }
 
             AlertType.PANIC_BUTTON -> {
