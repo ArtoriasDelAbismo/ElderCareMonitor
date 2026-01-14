@@ -106,8 +106,8 @@ class MainActivity : ComponentActivity() {
 
             // 🔑 START SENSORS IMMEDIATELY
             LaunchedEffect(Unit) {
-                heartRateManager.start()
                 wearingManager.start()
+                heartRateManager.start()
                 fallDetectionManager.start()
             }
 
