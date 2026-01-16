@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,13 +37,16 @@ class MainActivity : ComponentActivity() {
 
     private val userId = "elder_001"
 
-    // ---- ON CREATE ----
+    // ✅ Activity-owned Compose state (bridge)
+    private val hrTextState = mutableStateOf<String?>(null)
+    private val wearingTextState = mutableStateOf("Status: Detecting")
+    private val showFallCheckState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         installSplashScreen()
-        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         safetyEngine = SafetyEngine(
             vibrateWarning = VibrationHelper(this),
@@ -56,10 +60,47 @@ class MainActivity : ComponentActivity() {
 
         val measureClient = HealthServices.getClient(this).measureClient
 
+        // ✅ Managers live here (Activity lifecycle)
+        heartRateManager = HeartRateManager(
+            measureClient = measureClient,
+            onHeartRateChanged = { bpm ->
+                hrTextState.value = bpm.toString()
+                safetyEngine.onEvent(SafetyEvent.HeartRate(bpm))
+            },
+        )
+
+        wearingManager = WearingStateManager(
+            context = this,
+            onWorn = {
+                wearingTextState.value = "Status: Wearing ✅"
+                safetyEngine.onEvent(SafetyEvent.WatchWornAgain)
+                heartRateManager.start()
+            },
+            onRemoved = {
+                wearingTextState.value = "Status: Removed ❌"
+                safetyEngine.onEvent(SafetyEvent.WatchRemoved)
+                heartRateManager.stop()
+            }
+        )
+
+        fallDetectionManager = FallDetectionManager(
+            context = this,
+            onFallDetected = {
+                showFallCheckState.value = true
+                safetyEngine.onEvent(SafetyEvent.FallDetected)
+            }
+        )
+
+        // Start sensors once
+        wearingManager.start()
+        heartRateManager.start()
+        fallDetectionManager.start()
+
         setContent {
-            var hrText by remember { mutableStateOf<String?>(null) }
-            var wearingText by remember { mutableStateOf("Status: Detecting") }
-            var showFallCheckScreen by remember { mutableStateOf(false) }
+            val hrText = hrTextState.value
+            val wearingText = wearingTextState.value
+            val showFallCheckScreen = showFallCheckState.value
+
             val emergencyContacts = remember {
                 listOf(
                     EmergencyContact("Ana", "1234567890"),
@@ -68,50 +109,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            // HEART RATE MANAGER
-            heartRateManager = HeartRateManager(
-                measureClient = measureClient,
-                onHeartRateChanged = { bpm ->
-                    hrText = bpm.toString()
-                    safetyEngine.onEvent(SafetyEvent.HeartRate(bpm))
-                }
-            )
-
-
-            // WEARING STATE MANAGER
-            wearingManager = remember {
-                WearingStateManager(
-                    context = this@MainActivity,
-                    onWorn = {
-                        wearingText = "Status: Wearing ✅"
-                        safetyEngine.onEvent(SafetyEvent.WatchWornAgain)
-                        heartRateManager.start()
-                    },
-                    onRemoved = {
-                        wearingText = "Status: Removed ❌"
-                        safetyEngine.onEvent(SafetyEvent.WatchRemoved)
-                        heartRateManager.stop()
-                    }
-                )
-            }
-
-            // FALL DETECTION MANAGER
-            fallDetectionManager = FallDetectionManager(
-                context = this@MainActivity,
-                onFallDetected = {
-                    safetyEngine.onEvent(SafetyEvent.FallDetected)
-                    showFallCheckScreen = true
-                }
-            )
-
-            // 🔑 START SENSORS IMMEDIATELY
-            LaunchedEffect(Unit) {
-                wearingManager.start()
-                heartRateManager.start()
-                fallDetectionManager.start()
-            }
-
-            // POST NOTIFICATIONS PERMISSION
+            // permissions
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
@@ -137,10 +135,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // UI
-
             ElderCareMonitorTheme {
-
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -158,12 +153,12 @@ class MainActivity : ComponentActivity() {
                         showFallCheckScreen -> {
                             FallCheckScreen(
                                 onImOk = {
-                                    showFallCheckScreen = false
+                                    showFallCheckState.value = false
                                     fallDetectionManager.reset()
                                     safetyEngine.onEvent(SafetyEvent.UserIsOk)
                                 },
                                 onNeedHelp = {
-                                    showFallCheckScreen = false
+                                    showFallCheckState.value = false
                                     fallDetectionManager.reset()
                                     safetyEngine.onEvent(SafetyEvent.UserNeedsHelp)
                                 }
