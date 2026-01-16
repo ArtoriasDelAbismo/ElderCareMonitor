@@ -195,6 +195,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        safetyEngine.clear()
         super.onDestroy()
         heartRateManager.stop()
         wearingManager.stop()

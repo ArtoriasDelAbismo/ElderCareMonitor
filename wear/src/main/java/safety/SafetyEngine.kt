@@ -114,7 +114,7 @@ class SafetyEngine(
                                 showDangerousHeartRateNotification.showDangerousHeartRateNotification()
                                 triggerAlert(
                                     AlertType.DANGEROUS_HR,
-                                    "⚠️ Sustained low heart rate: $current bpm for ${LOW_HR_CONFIRMATION_WINDOW/1000}s"
+                                    "⚠️Sustained low heart rate: $current bpm for ${LOW_HR_CONFIRMATION_WINDOW/1000}s"
                                 )
                             }
 
@@ -142,7 +142,7 @@ class SafetyEngine(
                                 showDangerousHeartRateNotification.showDangerousHeartRateNotification()
                                 triggerAlert(
                                     AlertType.DANGEROUS_HR,
-                                    "⚠️ Sustained high heart rate: $current bpm for ${HIGH_HR_CONFIRMATION_WINDOW/1000}s"
+                                    "⚠️Sustained high heart rate: $current bpm for ${HIGH_HR_CONFIRMATION_WINDOW/1000}s"
                                 )
                             }
 
@@ -168,7 +168,7 @@ class SafetyEngine(
                 _isWearing.value = false
                 triggerAlert(
                     AlertType.WATCH_REMOVED,
-                    "⚠️\uFE0F Watch removed"
+                    "⚠️Watch removed"
                 )
             }
 
@@ -184,7 +184,7 @@ class SafetyEngine(
             is SafetyEvent.UserNeedsHelp -> {
                 triggerAlert(
                     AlertType.FALL,
-                    "⚠️\uFE0F Fall detected, user needs immediate attention"
+                    "⚠️Fall detected, user needs immediate attention"
                 )
             }
 
@@ -192,7 +192,7 @@ class SafetyEngine(
                 showPanicButtonPressedNotification.showPanicButtonPressedNotification()
                 triggerAlert(
                     AlertType.PANIC_BUTTON,
-                    "⚠️\uFE0F Panic button pressed"
+                    "⚠️Panic button pressed"
                 )
             }
 
@@ -200,7 +200,7 @@ class SafetyEngine(
 
     }
 
-    fun clear() {
+    fun clear() {  // CALL FROM MAIN ACTIVITY ON DESTROY
         scope.cancel()
     }
 
