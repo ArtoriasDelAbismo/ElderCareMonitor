@@ -12,6 +12,7 @@ class HeartRateManager(
 
     private var zeroCount = 0            // counts consecutive 0 BPM readings
     private val zeroLimit = 3           // ignore isolated 0 BPM unless repeated
+    private var isStarted = false
 
     private val callback = object : MeasureCallback {
         override fun onDataReceived(data: DataPointContainer) {
@@ -51,12 +52,16 @@ class HeartRateManager(
     }
 
     fun start() {
+        if(isStarted) return
+        isStarted = true
         zeroCount = 0
         measureClient.registerMeasureCallback(DataType.HEART_RATE_BPM, callback)
         Log.d("HEART", "HeartRateManager started")
     }
 
     fun stop() {
+        if(!isStarted) return
+        isStarted = false
         measureClient.unregisterMeasureCallbackAsync(DataType.HEART_RATE_BPM, callback)
         Log.d("HEART", "HeartRateManager stopped")
     }
