@@ -234,19 +234,19 @@ class SafetyEngine(
         vibrateWarning.vibrate()
         when (type) {
             AlertType.FALL -> {
-                alertService.sendFallDetectedAlert(message)
+                alertService.sendFallDetectedAlert(userId, message)
             }
 
             AlertType.WATCH_REMOVED -> {
-                alertService.sendWatchRemovedAlert(message)
+                alertService.sendWatchRemovedAlert(userId, message)
             }
 
             AlertType.DANGEROUS_HR -> {
-                alertService.sendDangerousHeartRateAlert(message) // send alert? or suggest action?
+                alertService.sendDangerousHeartRateAlert(userId, message) // send alert? or suggest action?
             }
 
             AlertType.PANIC_BUTTON -> {
-                alertService.panicButtonPressed(message)
+                alertService.panicButtonPressed(userId, message)
             }
 
         }
