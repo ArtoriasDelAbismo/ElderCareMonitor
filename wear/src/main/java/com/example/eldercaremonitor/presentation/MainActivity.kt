@@ -1,10 +1,12 @@
 package com.example.eldercaremonitor.presentation
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.net.Uri
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -34,6 +36,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var wearingManager: WearingStateManager
     private lateinit var fallDetectionManager: FallDetectionManager
     private lateinit var safetyEngine: SafetyEngine
+    private lateinit var alertService: AlertService
 
     private val userId = "elder_001"
 
@@ -48,13 +51,14 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        alertService = AlertService()
         safetyEngine = SafetyEngine(
             vibrateWarning = VibrationHelper(this),
             showWatchRemovedNotification = NotificationHelper(this),
             showFallDetectedNotification = NotificationHelper(this),
             showDangerousHeartRateNotification = NotificationHelper(this),
             showPanicButtonPressedNotification = NotificationHelper(this),
-            alertService = AlertService(),
+            alertService = alertService,
             userId = userId
         )
 
@@ -105,9 +109,10 @@ class MainActivity : ComponentActivity() {
                 listOf(
                     EmergencyContact("Ana", "1234567890"),
                     EmergencyContact("Freddy", "0987654321"),
-                    EmergencyContact("Tom", "0987654322"),
+                    EmergencyContact("Jero", "3425145911"),
                 )
             }
+            val pendingCallContact = remember { mutableStateOf<EmergencyContact?>(null) }
 
             // permissions
             val notificationPermissionLauncher =
@@ -122,6 +127,26 @@ class MainActivity : ComponentActivity() {
                         ).show()
                     }
                 }
+
+            /*  ---- USED ONLY IF IMPLEMENTING ACTION_CALL ----
+                val callPermissionLauncher =
+                rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    val contact = pendingCallContact.value
+                    if (granted && contact != null) {
+                        pendingCallContact.value = null
+                        launchEmergencyCall(contact)
+                    } else if (!granted) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Call permission not granted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+             */
+
 
             LaunchedEffect(Unit) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -177,9 +202,21 @@ class MainActivity : ComponentActivity() {
                                         "Calling ${contact.name}",
                                         Toast.LENGTH_SHORT
                                     ).show()
-                                    // - launch call intent
-                                    // - send backend alert
-                                    // - send WhatsApp via Twilio
+
+                                    launchEmergencyCall(contact)
+                                    /*  ---- USED ONLY IF IMPLEMENTING ACTION_CALL
+                                    if (checkSelfPermission(Manifest.permission.CALL_PHONE)
+                                        == PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        launchEmergencyCall(contact)
+                                    } else {
+                                        pendingCallContact.value = contact
+                                        callPermissionLauncher.launch(
+                                            Manifest.permission.CALL_PHONE
+                                        )
+                                    }
+                                    */
+
                                 },
                                 onPanic = {
                                     safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)
@@ -200,5 +237,26 @@ class MainActivity : ComponentActivity() {
         heartRateManager.stop()
         wearingManager.stop()
         fallDetectionManager.stop()
+    }
+
+    private fun launchEmergencyCall(contact: EmergencyContact) {
+        val phoneNumber = contact.phoneNumber
+        val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
+        try {
+            startActivity(dialIntent)
+            alertService.sendEmergencyCallAlert(
+                userId = userId,
+                contactName = contact.name,
+                contactPhone = phoneNumber,
+                message = "Emergency dial started"
+            )
+        } catch (e: Exception) {
+            Log.e("EMERGENCY", "Failed to open dialer", e)
+            Toast.makeText(
+                this@MainActivity,
+                "Unable to open dialer",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }
