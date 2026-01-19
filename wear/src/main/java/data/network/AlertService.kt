@@ -26,7 +26,10 @@ class AlertService {
     private fun sendAlert(
         userId: String,
         logTag: String,
-        alertType: String
+        alertType: String,
+        message: String? = null,
+        contactName: String? = null,
+        contactPhone: String? = null
     ) {
         Log.d("NETWORK", "Calling backend alert API: $logTag")
         Log.e(
@@ -38,7 +41,17 @@ class AlertService {
             put("userId", userId)
             put("timestamp", System.currentTimeMillis())
             put("alertType", alertType)
+            if (!message.isNullOrBlank()) {
+                put("message", message)
+            }
+            if (!contactName.isNullOrBlank()) {
+                put("contactName", contactName)
+            }
+            if (!contactPhone.isNullOrBlank()) {
+                put("contactPhone", contactPhone)
+            }
         }
+        Log.d("NETWORK_DEBUG", "Alert payload: ${json.toString()}")
 
         val requestBody = json.toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -55,21 +68,39 @@ class AlertService {
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
+                    val body = it.body?.string()
                     Log.d("NETWORK", "$logTag response code: ${it.code}")
+                    if (!body.isNullOrBlank()) {
+                        Log.d("NETWORK_DEBUG", "$logTag response body: $body")
+                    }
                 }
             }
         })
     }
 
-    fun sendWatchRemovedAlert(userId: String) =
-        sendAlert(userId, "watch-removed", "WATCH_REMOVED")
+    fun sendWatchRemovedAlert(userId: String, message: String? = null) =
+        sendAlert(userId, "watch-removed", "WATCH_REMOVED", message = message)
 
-    fun sendFallDetectedAlert(userId: String) =
-        sendAlert(userId, "fall-detected", "FALL_DETECTED")
+    fun sendFallDetectedAlert(userId: String, message: String? = null) =
+        sendAlert(userId, "fall-detected", "FALL_DETECTED", message = message)
 
-    fun panicButtonPressed(userId: String) =
-        sendAlert(userId, "panic-button", "PANIC")
+    fun panicButtonPressed(userId: String, message: String? = null) =
+        sendAlert(userId, "panic-button", "PANIC", message = message)
 
-    fun sendDangerousHeartRateAlert(userId: String) =
-        sendAlert(userId, "dangerous-heart-rate", "DANGEROUS_HR")
+    fun sendDangerousHeartRateAlert(userId: String, message: String? = null) =
+        sendAlert(userId, "dangerous-heart-rate", "DANGEROUS_HR", message = message)
+
+    fun sendEmergencyCallAlert(
+        userId: String,
+        contactName: String,
+        contactPhone: String,
+        message: String? = null
+    ) = sendAlert(
+        userId = userId,
+        logTag = "emergency-call",
+        alertType = "EMERGENCY_CALL",
+        message = message,
+        contactName = contactName,
+        contactPhone = contactPhone
+    )
 }
