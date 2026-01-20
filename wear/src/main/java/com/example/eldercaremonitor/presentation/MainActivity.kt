@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.health.services.client.HealthServices
+import androidx.wear.compose.material.Button
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.presentation.utils.NotificationHelper
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
@@ -44,6 +45,8 @@ class MainActivity : ComponentActivity() {
     private val hrTextState = mutableStateOf<String?>(null)
     private val wearingTextState = mutableStateOf("Status: Detecting")
     private val showFallCheckState = mutableStateOf(false)
+
+    private val showDangerousHrSuggestionState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,6 +107,9 @@ class MainActivity : ComponentActivity() {
             val hrText = hrTextState.value
             val wearingText = wearingTextState.value
             val showFallCheckScreen = showFallCheckState.value
+            val showDangerousHrSuggestion = showDangerousHrSuggestionState.value
+
+
 
             val emergencyContacts = remember {
                 listOf(
@@ -175,6 +181,7 @@ class MainActivity : ComponentActivity() {
                             FullScreenSplash { showFullSplash = false }
                         }
 
+
                         showFallCheckScreen -> {
                             FallCheckScreen(
                                 onImOk = {
@@ -190,18 +197,30 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        showDangerousHrSuggestion -> {
+                            DangerousHrSuggestionScreen(
+                                onImOk = {
+                                    showDangerousHrSuggestionState.value = false
+                                    safetyEngine.onEvent(SafetyEvent.UserIsOk)
+                                }
+                            )
+                        }
                         else -> {
                             PagerScreen(
                                 heartRate = hrText?.toIntOrNull(),
                                 wearingStatus = wearingText,
                                 contacts = emergencyContacts,
                                 onCallContact = { contact ->
-                                    Log.d("EMERGENCY", "Calling ${contact.name}")
-                                    Toast.makeText(
+                                    Log.d("EMERGENCY", "Selected contact: ${contact.name}")
+
+                                    /* ---- SHOW TOAST WHEN SELECTING CONTACT? ----
+                                        Toast.makeText(
                                         this@MainActivity,
-                                        "Calling ${contact.name}",
+                                        "Selected contact: ${contact.name}",
                                         Toast.LENGTH_SHORT
                                     ).show()
+                                    */
+
 
                                     launchEmergencyCall(contact)
                                     /*  ---- USED ONLY IF IMPLEMENTING ACTION_CALL
@@ -220,6 +239,13 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onPanic = {
                                     safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)
+                                },
+                                onDebugFall = {
+                                    showFallCheckState.value = true
+                                    safetyEngine.onEvent(SafetyEvent.FallDetected)
+                                },
+                                onDangerousHrSuggestion = {
+                                    showDangerousHrSuggestionState.value = true
                                 }
                             )
                         }
