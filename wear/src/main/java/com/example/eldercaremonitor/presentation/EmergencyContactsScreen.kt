@@ -60,7 +60,7 @@ fun EmergencyContactsScreen(
                     .padding(vertical = 4.dp)
             ) {
                 Text(
-                    text = "Call ${contact.name}",
+                    text = "Call ${contact.name} \uD83D\uDCDE",
                     textAlign = TextAlign.Center
                 )
             }
