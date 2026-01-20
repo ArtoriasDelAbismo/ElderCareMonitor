@@ -17,7 +17,9 @@ fun PagerScreen(
     contacts: List<EmergencyContact>,
     onPanic: () -> Unit,
     wearingStatus: String,
-    onCallContact: (EmergencyContact) -> Unit
+    onCallContact: (EmergencyContact) -> Unit,
+    onDebugFall: () -> Unit,
+    onDangerousHrSuggestion: () -> Unit
 ) {
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -36,8 +38,9 @@ fun PagerScreen(
             0 -> HeartRateScreen(
                 hr = heartRate,
                 onPanic = onPanic,
-                onDebugFall = {},
-                wearingStatus = wearingStatus
+                onDebugFall = onDebugFall,
+                wearingStatus = wearingStatus,
+                onDangerousHrSuggestion = onDangerousHrSuggestion
             )
 
             // Page 1 → Emergency contacts
