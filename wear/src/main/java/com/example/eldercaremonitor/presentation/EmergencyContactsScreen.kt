@@ -39,7 +39,7 @@ fun EmergencyContactsScreen(
 
         item {
             Text(
-                text = "Emergency Contacts",
+                text = "\uD83C\uDD98 Emergency Contacts",
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
