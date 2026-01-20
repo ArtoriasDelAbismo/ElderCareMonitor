@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material.Text
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material.Button
 import com.example.eldercaremonitor.R
 
 @Composable
@@ -21,7 +22,8 @@ fun HeartRateScreen(
     hr: Int?,
     wearingStatus: String,
     onDebugFall: () -> Unit,
-    onPanic: () -> Unit
+    onPanic: () -> Unit,
+    onDangerousHrSuggestion: () -> Unit
 ) {
 
     val hasBpm = hr != null && hr > 0
@@ -95,20 +97,39 @@ fun HeartRateScreen(
         }
 
 
-        Spacer(modifier = Modifier.height(20.dp))
+        //Spacer(modifier = Modifier.height(20.dp))
+
 
         Text(
-            text = "-->",
-            textAlign = TextAlign.End,
-            color = Color.White
+        text = "-->",
+        textAlign = TextAlign.End,
+        color = Color.White
         )
 
 
-        // BUTTON TO SIMULATE FALL
 
-        //Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
-        //    Text(text = "Simulate fall")
-        //}
+
+        // ---- BUTTON TO SIMULATE FALL ----
+
+        /*
+        Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
+        Text(text = "Simulate fall")
+        }
+        */
+
+
+        // ---- BUTTON TO SIMULATE DANGEROUS HR ----
+
+        /*
+         Button(onClick = onDangerousHrSuggestion, modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)) {
+        Text(text = "Simulate Dangerous Hr")
+        */
+
+
+
+
     }
 }
 
