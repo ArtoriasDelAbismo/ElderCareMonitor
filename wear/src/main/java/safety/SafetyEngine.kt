@@ -32,6 +32,8 @@ sealed class SafetyEvent {
 
     object PanicButtonPressed : SafetyEvent()
 
+    data class FallNoResponse(val elapsedMs: Long) : SafetyEvent()
+
 }
 
 // THRESHOLDS AND CONSTANTS
@@ -185,6 +187,14 @@ class SafetyEngine(
                 triggerAlert(
                     AlertType.FALL,
                     "⚠️Fall detected, user needs immediate attention"
+                )
+            }
+
+            is SafetyEvent.FallNoResponse -> {
+                val seconds = event.elapsedMs / 1000
+                triggerAlert(
+                    AlertType.FALL,
+                    "High severity fall: no response after ${seconds}s"
                 )
             }
 

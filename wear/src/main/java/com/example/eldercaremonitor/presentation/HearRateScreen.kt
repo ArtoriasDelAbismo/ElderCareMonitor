@@ -111,11 +111,11 @@ fun HeartRateScreen(
 
         // ---- BUTTON TO SIMULATE FALL ----
 
-        /*
+
         Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
         Text(text = "Simulate fall")
         }
-        */
+
 
 
         // ---- BUTTON TO SIMULATE DANGEROUS HR ----

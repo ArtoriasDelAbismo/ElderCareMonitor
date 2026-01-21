@@ -28,10 +28,14 @@ import com.example.eldercaremonitor.sensors.FallDetectionManager
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
 import data.network.AlertService
+import kotlinx.coroutines.delay
 import safety.SafetyEngine
 import safety.SafetyEvent
 
 class MainActivity : ComponentActivity() {
+    private companion object {
+        private const val FALL_NO_RESPONSE_TIMEOUT_MS = 15_000L
+    }
 
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
@@ -119,6 +123,25 @@ class MainActivity : ComponentActivity() {
                 )
             }
             val pendingCallContact = remember { mutableStateOf<EmergencyContact?>(null) }
+
+            LaunchedEffect(showFallCheckScreen) {
+                if (showFallCheckScreen) {
+                    delay(FALL_NO_RESPONSE_TIMEOUT_MS)
+                    if (showFallCheckState.value) {
+                        showFallCheckState.value = false
+                        fallDetectionManager.reset()
+                        safetyEngine.onEvent(
+                            SafetyEvent.FallNoResponse(FALL_NO_RESPONSE_TIMEOUT_MS)
+                        )
+                        val contact = emergencyContacts.firstOrNull()
+                        if (contact != null) {
+                            launchEmergencyCall(contact)
+                        } else {
+                            Log.w("EMERGENCY", "No emergency contacts available for auto-escalation")
+                        }
+                    }
+                }
+            }
 
             // permissions
             val notificationPermissionLauncher =
