@@ -52,6 +52,7 @@ class HeartRateManager(
     }
 
     fun start() {
+        Log.d("HEART", "HeartRateManager.start() CALLED")
         if(isStarted) return
         isStarted = true
         zeroCount = 0
@@ -60,6 +61,7 @@ class HeartRateManager(
     }
 
     fun stop() {
+        Log.d("HEART", "HeartRateManager.stop() CALLED")
         if(!isStarted) return
         isStarted = false
         measureClient.unregisterMeasureCallbackAsync(DataType.HEART_RATE_BPM, callback)

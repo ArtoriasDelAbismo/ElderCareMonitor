@@ -19,6 +19,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.health.services.client.HealthServices
+|//import androidx.health.services.client.data.DataType
+//import androidx.health.services.client.permission.HealthPermission
+//import androidx.health.services.client.permission.PermissionController
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.Button
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.presentation.utils.NotificationHelper
@@ -29,6 +33,7 @@ import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
 import data.network.AlertService
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import safety.SafetyEngine
 import safety.SafetyEvent
 
@@ -42,6 +47,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var fallDetectionManager: FallDetectionManager
     private lateinit var safetyEngine: SafetyEngine
     private lateinit var alertService: AlertService
+    //private lateinit var permissionController: PermissionController
+    //private lateinit var requestBodySensorsPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>
+    //private lateinit var requestHealthServicesPermissionLauncher: androidx.activity.result.ActivityResultLauncher<Set<String>>
+    //private var hasBodySensorsPermission = false
+    //private var hasHeartRatePermission = false
 
     private val userId = "elder_001"
 
@@ -53,12 +63,15 @@ class MainActivity : ComponentActivity() {
     private val showDangerousHrSuggestionState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("BOOT", "MainActivity.onCreate START")
         super.onCreate(savedInstanceState)
+        Log.d("BOOT", "MainActivity.onCreate AFTER super")
 
         installSplashScreen()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         alertService = AlertService()
+        //permissionController = HealthServices.getClient(this).permissionController
         safetyEngine = SafetyEngine(
             vibrateWarning = VibrationHelper(this),
             showWatchRemovedNotification = NotificationHelper(this),
@@ -102,10 +115,62 @@ class MainActivity : ComponentActivity() {
             }
         )
 
-        // Start sensors once
         wearingManager.start()
-        heartRateManager.start()
         fallDetectionManager.start()
+
+
+        /*
+                requestBodySensorsPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                hasBodySensorsPermission = granted
+                if (!granted) {
+                    Toast.makeText(
+                        this,
+                        "Body sensors permission not granted",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                requestHealthServicesPermission()
+            }
+
+        requestHealthServicesPermissionLauncher =
+            registerForActivityResult(
+                PermissionController.createRequestPermissionActivityContract()
+            ) { grantedPermissions ->
+                val hrPermission = HealthPermission.getReadPermission(DataType.HEART_RATE_BPM)
+                hasHeartRatePermission = grantedPermissions.contains(hrPermission)
+                if (!hasHeartRatePermission) {
+                    Toast.makeText(
+                        this,
+                        "Heart rate permission not granted",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                startSensorsIfReady()
+            }
+
+        lifecycleScope.launch {
+            hasBodySensorsPermission =
+                checkSelfPermission(Manifest.permission.BODY_SENSORS) ==
+                    PackageManager.PERMISSION_GRANTED
+            val hrPermission = HealthPermission.getReadPermission(DataType.HEART_RATE_BPM)
+            val grantedPermissions = permissionController.getGrantedPermissions()
+            hasHeartRatePermission = grantedPermissions.contains(hrPermission)
+
+            if (!hasBodySensorsPermission) {
+                requestBodySensorsPermissionLauncher.launch(Manifest.permission.BODY_SENSORS)
+                return@launch
+            }
+
+            if (!hasHeartRatePermission) {
+                requestHealthServicesPermission()
+                return@launch
+            }
+
+            startSensorsIfReady()
+        }
+
+        */
 
         setContent {
             val hrText = hrTextState.value
@@ -278,15 +343,18 @@ class MainActivity : ComponentActivity() {
 
             }
         }
+        Log.d("BOOT", "MainActivity.onCreate END")
     }
 
     override fun onDestroy() {
+        Log.d("BOOT", "MainActivity.onDestroy")
         safetyEngine.clear()
         super.onDestroy()
         heartRateManager.stop()
         wearingManager.stop()
         fallDetectionManager.stop()
     }
+
 
     private fun launchEmergencyCall(contact: EmergencyContact) {
         val phoneNumber = contact.phoneNumber
@@ -308,4 +376,20 @@ class MainActivity : ComponentActivity() {
             ).show()
         }
     }
+
+    /*
+    private fun requestHealthServicesPermission() {
+        val hrPermission = HealthPermission.getReadPermission(DataType.HEART_RATE_BPM)
+        requestHealthServicesPermissionLauncher.launch(setOf(hrPermission))
+    }
+
+    private fun startSensorsIfReady() {
+        if (!hasBodySensorsPermission || !hasHeartRatePermission) return
+        wearingManager.start()
+        heartRateManager.start()
+        fallDetectionManager.start()
+    }
+    */
+
+
 }
