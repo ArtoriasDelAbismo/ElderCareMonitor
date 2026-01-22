@@ -6,11 +6,9 @@ import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONObject
-import safety.SafetyEngine
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -21,37 +19,66 @@ class AlertService {
         .connectTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    val BASE_URL = "https://forgiving-lucia-crudely.ngrok-free.dev"
+    // TODO: Move to BuildConfig or config file so you don’t hardcode ngrok
+    private val BASE_URL = "https://forgiving-lucia-crudely.ngrok-free.dev"
+
+    // TODO: Replace with a real ID if you have one (device serial, installation id, etc.)
+    private val DEVICE_ID = "watch_001"
 
     private fun sendAlert(
         userId: String,
         logTag: String,
-        alertType: String,
+        eventCode: String,          // NEW: canonical code (what happened)
+        severity: String = "LOW",   // NEW
         message: String? = null,
+        requiresUserConfirmation: Boolean? = null,
+        userResponded: Boolean? = null,
+        confirmationWindowSec: Int? = null,
+        wearingStatus: String? = null,
         contactName: String? = null,
         contactPhone: String? = null
     ) {
         Log.d("NETWORK", "Calling backend alert API: $logTag")
-        Log.e(
-            "NETWORK_DEBUG",
-            "HITTING URL: $BASE_URL/api/alert | type=$alertType"
-        )
+        Log.e("NETWORK_DEBUG", "HITTING URL: $BASE_URL/api/alert | eventCode=$eventCode")
 
-        val json = JSONObject().apply {
-            put("userId", userId)
-            put("timestamp", System.currentTimeMillis())
-            put("alertType", alertType)
-            if (!message.isNullOrBlank()) {
-                put("message", message)
-            }
-            if (!contactName.isNullOrBlank()) {
-                put("contactName", contactName)
-            }
-            if (!contactPhone.isNullOrBlank()) {
-                put("contactPhone", contactPhone)
+        val now = System.currentTimeMillis()
+        val eventId = "evt_$now" // good enough for prototype
+
+        val metadata = JSONObject().apply {
+            // Optional fields only if provided
+            if (!message.isNullOrBlank()) put("alertMessage", message)
+
+            requiresUserConfirmation?.let { put("requiresUserConfirmation", it) }
+            userResponded?.let { put("userResponded", it) }
+            confirmationWindowSec?.let { put("confirmationWindowSec", it) }
+
+            if (!contactName.isNullOrBlank()) put("contactName", contactName)
+            if (!contactPhone.isNullOrBlank()) put("contactPhone", contactPhone)
+
+            // sensorState subobject (only include if we have something)
+            if (!wearingStatus.isNullOrBlank()) {
+                put("sensorState", JSONObject().apply {
+                    put("wearingStatus", wearingStatus)
+                })
             }
         }
-        Log.d("NETWORK_DEBUG", "Alert payload: ${json.toString()}")
+
+        val json = JSONObject().apply {
+            // NEW structured fields
+            put("eventId", eventId)
+            put("deviceId", DEVICE_ID)
+            put("userId", userId)
+            put("eventCode", eventCode)
+            put("severity", severity)
+            put("timestamp", now)
+            put("metadata", metadata)
+
+            // LEGACY field so your current backend switch keeps working
+            // (you can remove this after you migrate the backend)
+            put("alertType", eventCode)
+        }
+
+        Log.d("NETWORK_DEBUG", "Alert payload: ${json}")
 
         val requestBody = json.toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -78,29 +105,108 @@ class AlertService {
         })
     }
 
-    fun sendWatchRemovedAlert(userId: String, message: String? = null) =
-        sendAlert(userId, "watch-removed", "WATCH_REMOVED", message = message)
+    fun sendWatchRemovedAlert(
+        userId: String,
+        message: String? = null,
+        wearingStatus: String? = null
+    ) = sendAlert(
+        userId = userId,
+        logTag = "watch-removed",
+        eventCode = "WATCH_REMOVED",
+        severity = "LOW",
+        message = message,
+        wearingStatus = wearingStatus
+    )
 
-    fun sendFallDetectedAlert(userId: String, message: String? = null) =
-        sendAlert(userId, "fall-detected", "FALL_DETECTED", message = message)
+
+    fun sendFallDetectedAlert(
+        userId: String,
+        message: String? = null,
+        severity: String = "MEDIUM",
+        requiresUserConfirmation: Boolean = true,
+        userResponded: Boolean = false,
+        confirmationWindowSec: Int = 5,
+        wearingStatus: String? = null
+    ) = sendAlert(
+        userId = userId,
+        logTag = "fall-detected",
+        eventCode = "FALL_DETECTED",
+        severity = severity,
+        message = message,
+        requiresUserConfirmation = requiresUserConfirmation,
+        userResponded = userResponded,
+        confirmationWindowSec = confirmationWindowSec,
+        wearingStatus = wearingStatus
+    )
+
+    fun sendFallNoResponseAlert(
+        userId: String,
+        elapsedMs: Long,
+        wearingStatus: String? = null
+    ) = sendAlert(
+        userId = userId,
+        logTag = "fall-no-response",
+        eventCode = "FALL_NO_RESPONSE",
+        severity = "HIGH",
+        message = "High severity fall: no response after ${elapsedMs/1000}s",
+        requiresUserConfirmation = true,
+        userResponded = false,
+        confirmationWindowSec = (elapsedMs / 1000).toInt(),
+        wearingStatus = wearingStatus
+    )
+
+    fun sendFallConfirmedHelpAlert(
+        userId: String,
+        confirmationWindowSec: Int,
+        wearingStatus: String? = null
+    ) = sendAlert(
+        userId = userId,
+        logTag = "fall-confirmed",
+        eventCode = "FALL_CONFIRMED_HELP",
+        severity = "HIGH",
+        message = "Fall confirmed by user: needs immediate attention",
+        requiresUserConfirmation = true,
+        userResponded = true,
+        confirmationWindowSec = confirmationWindowSec,
+        wearingStatus = wearingStatus
+    )
+
+
+
 
     fun panicButtonPressed(userId: String, message: String? = null) =
-        sendAlert(userId, "panic-button", "PANIC", message = message)
+        sendAlert(
+            userId = userId,
+            logTag = "panic-button",
+            eventCode = "PANIC",
+            severity = "HIGH",
+            message = message ?: "Panic button pressed",
+            requiresUserConfirmation = false
+        )
 
     fun sendDangerousHeartRateAlert(userId: String, message: String? = null) =
-        sendAlert(userId, "dangerous-heart-rate", "DANGEROUS_HR", message = message)
+        sendAlert(
+            userId = userId,
+            logTag = "dangerous-heart-rate",
+            eventCode = "DANGEROUS_HR",
+            severity = "MEDIUM",
+            message = message ?: "Dangerous heart rate detected"
+        )
 
     fun sendEmergencyCallAlert(
         userId: String,
         contactName: String,
         contactPhone: String,
         message: String? = null
-    ) = sendAlert(
-        userId = userId,
-        logTag = "emergency-call",
-        alertType = "EMERGENCY_CALL",
-        message = message,
-        contactName = contactName,
-        contactPhone = contactPhone
-    )
+    ) =
+        sendAlert(
+            userId = userId,
+            logTag = "emergency-call",
+            eventCode = "EMERGENCY_CALL",
+            severity = "CRITICAL",
+            message = message ?: "Escalating to emergency call",
+            contactName = contactName,
+            contactPhone = contactPhone
+        )
 }
+

@@ -43,7 +43,7 @@ const val LOW_BPM_THRESHOLD = 45
 
 private const val ALERT_COOLDOWN_WINDOW = 10000
 private const val WATCH_REMOVED_CONFIRMATION_WINDOW = 5000
-private const val FALL_DETECTED_CONFIRMATION_WINDOW = 5000
+private const val FALL_DETECTED_CONFIRMATION_WINDOW = 15_000L
 private const val HIGH_HR_CONFIRMATION_WINDOW = 10_000L
 private const val LOW_HR_CONFIRMATION_WINDOW = 5_000L
 private const val HIGH_HR_RESET_HYSTERESIS = 5
@@ -163,6 +163,16 @@ class SafetyEngine(
             is SafetyEvent.FallDetected -> {
                 Log.d("ALERT", "Fall detected, waiting for user confirmation")
                 showFallDetectedNotification.showFallDetectedNotification()
+
+                alertService.sendFallDetectedAlert(
+                    userId = userId,
+                    message = "Fall detected, awaiting user confirmation",
+                    severity = "MEDIUM",
+                    requiresUserConfirmation = true,
+                    userResponded = false,
+                    confirmationWindowSec = (FALL_DETECTED_CONFIRMATION_WINDOW / 1000).toInt(),
+                    wearingStatus = wearingStatus()
+                )
             }
 
             is SafetyEvent.WatchRemoved -> {
@@ -185,7 +195,7 @@ class SafetyEngine(
 
             is SafetyEvent.UserNeedsHelp -> {
                 triggerAlert(
-                    AlertType.FALL,
+                    AlertType.FALL_CONFIRMED_HELP,
                     "⚠️Fall detected, user needs immediate attention"
                 )
             }
@@ -193,8 +203,9 @@ class SafetyEngine(
             is SafetyEvent.FallNoResponse -> {
                 val seconds = event.elapsedMs / 1000
                 triggerAlert(
-                    AlertType.FALL,
-                    "High severity fall: no response after ${seconds}s"
+                    AlertType.FALL_NO_RESPONSE,
+                    "High severity fall: no response after ${seconds}s",
+                    event.elapsedMs
                 )
             }
 
@@ -214,6 +225,9 @@ class SafetyEngine(
         scope.cancel()
     }
 
+    private fun wearingStatus(): String =
+        if (_isWearing.value) "ON_WRIST" else "OFF_WRIST"
+
     // ----COOLDOWN LOGIC----
 
     private fun canAlert(): Boolean {
@@ -224,12 +238,19 @@ class SafetyEngine(
     // ----CREATE ALERT TYPES SO TRIGGER ALERT DECIDES WHICH ONE TO CALL----
 
     enum class AlertType {
-        FALL, WATCH_REMOVED, DANGEROUS_HR, PANIC_BUTTON
+        FALL_CONFIRMED_HELP,
+        FALL_NO_RESPONSE,
+        WATCH_REMOVED,
+        DANGEROUS_HR,
+        PANIC_BUTTON
     }
 
     private fun triggerAlert(
         type: AlertType,
-        message: String
+        message: String,
+        elapsedMs: Long? = null
+
+
     ) {
 
         val bypassCooldown = type == AlertType.WATCH_REMOVED
@@ -243,12 +264,24 @@ class SafetyEngine(
         pendingAlertJob?.cancel()
         vibrateWarning.vibrate()
         when (type) {
-            AlertType.FALL -> {
-                alertService.sendFallDetectedAlert(userId, message)
+            AlertType.FALL_CONFIRMED_HELP -> {
+                alertService.sendFallConfirmedHelpAlert(
+                    userId = userId,
+                    confirmationWindowSec = (FALL_DETECTED_CONFIRMATION_WINDOW / 1000).toInt(),
+                    wearingStatus = wearingStatus()
+                )
+            }
+
+            AlertType.FALL_NO_RESPONSE -> {
+                alertService.sendFallNoResponseAlert(
+                    userId = userId,
+                    elapsedMs = elapsedMs ?: 0L,
+                    wearingStatus = wearingStatus()
+                )
             }
 
             AlertType.WATCH_REMOVED -> {
-                alertService.sendWatchRemovedAlert(userId, message)
+                alertService.sendWatchRemovedAlert(userId, message, wearingStatus())
             }
 
             AlertType.DANGEROUS_HR -> {
