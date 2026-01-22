@@ -19,7 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.health.services.client.HealthServices
-|//import androidx.health.services.client.data.DataType
+//import androidx.health.services.client.data.DataType
 //import androidx.health.services.client.permission.HealthPermission
 //import androidx.health.services.client.permission.PermissionController
 import androidx.lifecycle.lifecycleScope
