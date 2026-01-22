@@ -222,7 +222,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-            /*  ---- USED ONLY IF IMPLEMENTING ACTION_CALL ----
+            //  ---- USED ONLY IF IMPLEMENTING ACTION_CALL ----
                 val callPermissionLauncher =
                 rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
@@ -239,7 +239,7 @@ class MainActivity : ComponentActivity() {
                         ).show()
                     }
                 }
-             */
+
 
 
             LaunchedEffect(Unit) {
@@ -311,7 +311,8 @@ class MainActivity : ComponentActivity() {
 
 
                                     launchEmergencyCall(contact)
-                                    /*  ---- USED ONLY IF IMPLEMENTING ACTION_CALL
+                                    //  ---- USED ONLY IF IMPLEMENTING ACTION_CALL
+
                                     if (checkSelfPermission(Manifest.permission.CALL_PHONE)
                                         == PackageManager.PERMISSION_GRANTED
                                     ) {
@@ -322,7 +323,7 @@ class MainActivity : ComponentActivity() {
                                             Manifest.permission.CALL_PHONE
                                         )
                                     }
-                                    */
+
 
                                 },
                                 onPanic = {
@@ -358,20 +359,20 @@ class MainActivity : ComponentActivity() {
 
     private fun launchEmergencyCall(contact: EmergencyContact) {
         val phoneNumber = contact.phoneNumber
-        val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
+        val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$phoneNumber"))
         try {
-            startActivity(dialIntent)
+            startActivity(callIntent)
             alertService.sendEmergencyCallAlert(
                 userId = userId,
                 contactName = contact.name,
                 contactPhone = phoneNumber,
-                message = "Emergency dial started"
+                message = "Emergency call started"
             )
         } catch (e: Exception) {
-            Log.e("EMERGENCY", "Failed to open dialer", e)
+            Log.e("EMERGENCY", "Failed to start emergency call", e)
             Toast.makeText(
                 this@MainActivity,
-                "Unable to open dialer",
+                "Unable to start emergency call",
                 Toast.LENGTH_SHORT
             ).show()
         }
