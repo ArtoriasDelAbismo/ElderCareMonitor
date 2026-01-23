@@ -31,6 +31,8 @@ import com.example.eldercaremonitor.presentation.utils.panicLongPress
 import com.example.eldercaremonitor.sensors.FallDetectionManager
 import com.example.eldercaremonitor.sensors.HeartRateManager
 import com.example.eldercaremonitor.sensors.WearingStateManager
+import com.example.eldercaremonitor.data.location.WatchLocationHelper
+import kotlinx.coroutines.Dispatchers
 import data.network.AlertService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -42,6 +44,8 @@ class MainActivity : ComponentActivity() {
         private const val FALL_NO_RESPONSE_TIMEOUT_MS = 15_000L
     }
 
+    @Volatile
+    private var hasLocationPermissionFlag: Boolean = false
     private lateinit var heartRateManager: HeartRateManager
     private lateinit var wearingManager: WearingStateManager
     private lateinit var fallDetectionManager: FallDetectionManager
@@ -79,7 +83,9 @@ class MainActivity : ComponentActivity() {
             showDangerousHeartRateNotification = NotificationHelper(this),
             showPanicButtonPressedNotification = NotificationHelper(this),
             alertService = alertService,
-            userId = userId
+            userId = userId,
+            locationHelper = WatchLocationHelper(this),
+            hasLocationPermission = { hasLocationPermissionFlag }
         )
 
         val measureClient = HealthServices.getClient(this).measureClient
@@ -208,7 +214,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // permissions
+            // NOTIFICATIONS PERMISSIONS
+
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
@@ -222,7 +229,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-            //  ---- USED ONLY IF IMPLEMENTING ACTION_CALL ----
+            //  ---- PERMISSIONS ONLY IF IMPLEMENTING ACTION_CALL ----
                 val callPermissionLauncher =
                 rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
@@ -240,6 +247,38 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+            // ---- PERMISSIONS FOR GPS LOCATION ----
+
+            var hasLocationPermission by remember {
+                mutableStateOf(
+                    checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                )
+            }
+
+            // LAUNCHER
+
+            val locationPermissionLauncher =
+                rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestMultiplePermissions()
+                ) { results ->
+                    val fine = results[Manifest.permission.ACCESS_FINE_LOCATION] == true
+                    val coarse = results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+                    hasLocationPermission = fine || coarse
+
+                    hasLocationPermissionFlag = hasLocationPermission
+
+
+                    if (!hasLocationPermission) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Location permission not granted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+
 
 
             LaunchedEffect(Unit) {
@@ -251,6 +290,22 @@ class MainActivity : ComponentActivity() {
                             Manifest.permission.POST_NOTIFICATIONS
                         )
                     }
+                }
+                // val fine = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                val coarse = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+                hasLocationPermission = coarse
+
+
+                if (!hasLocationPermission) {
+                    locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                } else {
+                    hasLocationPermission = true
                 }
             }
 
@@ -301,18 +356,6 @@ class MainActivity : ComponentActivity() {
                                 onCallContact = { contact ->
                                     Log.d("EMERGENCY", "Selected contact: ${contact.name}")
 
-                                    /* ---- SHOW TOAST WHEN SELECTING CONTACT? ----
-                                        Toast.makeText(
-                                        this@MainActivity,
-                                        "Selected contact: ${contact.name}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    */
-
-
-                                    launchEmergencyCall(contact)
-                                    //  ---- USED ONLY IF IMPLEMENTING ACTION_CALL
-
                                     if (checkSelfPermission(Manifest.permission.CALL_PHONE)
                                         == PackageManager.PERMISSION_GRANTED
                                     ) {
@@ -323,8 +366,6 @@ class MainActivity : ComponentActivity() {
                                             Manifest.permission.CALL_PHONE
                                         )
                                     }
-
-
                                 },
                                 onPanic = {
                                     safetyEngine.onEvent(SafetyEvent.PanicButtonPressed)

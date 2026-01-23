@@ -20,6 +20,11 @@
     <!-- Required for Vibrate sensor -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Required for GPS location -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+
 
     <application
         android:usesCleartextTraffic="true"

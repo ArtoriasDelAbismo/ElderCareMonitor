@@ -36,7 +36,8 @@ class AlertService {
         confirmationWindowSec: Int? = null,
         wearingStatus: String? = null,
         contactName: String? = null,
-        contactPhone: String? = null
+        contactPhone: String? = null,
+        location: JSONObject? = null
     ) {
         Log.d("NETWORK", "Calling backend alert API: $logTag")
         Log.e("NETWORK_DEBUG", "HITTING URL: $BASE_URL/api/alert | eventCode=$eventCode")
@@ -61,6 +62,8 @@ class AlertService {
                     put("wearingStatus", wearingStatus)
                 })
             }
+            location?.let { put("location", it) }
+
         }
 
         val json = JSONObject().apply {
@@ -142,7 +145,8 @@ class AlertService {
     fun sendFallNoResponseAlert(
         userId: String,
         elapsedMs: Long,
-        wearingStatus: String? = null
+        wearingStatus: String? = null,
+        location: JSONObject? = null
     ) = sendAlert(
         userId = userId,
         logTag = "fall-no-response",
@@ -152,13 +156,15 @@ class AlertService {
         requiresUserConfirmation = true,
         userResponded = false,
         confirmationWindowSec = (elapsedMs / 1000).toInt(),
-        wearingStatus = wearingStatus
+        wearingStatus = wearingStatus,
+        location = location
     )
 
     fun sendFallConfirmedHelpAlert(
         userId: String,
         confirmationWindowSec: Int,
-        wearingStatus: String? = null
+        wearingStatus: String? = null,
+        location: JSONObject? = null
     ) = sendAlert(
         userId = userId,
         logTag = "fall-confirmed",
@@ -168,7 +174,8 @@ class AlertService {
         requiresUserConfirmation = true,
         userResponded = true,
         confirmationWindowSec = confirmationWindowSec,
-        wearingStatus = wearingStatus
+        wearingStatus = wearingStatus,
+        location = location
     )
 
 

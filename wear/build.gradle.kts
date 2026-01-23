@@ -62,5 +62,6 @@ dependencies {
     implementation("androidx.health:health-services-client:1.0.0-beta03")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.0")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
 }

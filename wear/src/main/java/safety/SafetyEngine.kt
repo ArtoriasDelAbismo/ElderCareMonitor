@@ -12,6 +12,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import com.example.eldercaremonitor.data.location.WatchLocationHelper
+
 
 
 
@@ -61,10 +63,9 @@ class SafetyEngine(
     private val alertService: AlertService,
     private val userId: String,
 
-    private val _isWearing: MutableStateFlow<Boolean> = MutableStateFlow(false)
-
-
-) {
+    private val _isWearing: MutableStateFlow<Boolean> = MutableStateFlow(false),
+    private val locationHelper: WatchLocationHelper,
+    private val hasLocationPermission: () -> Boolean) {
     private var lastAlertTimestamp: Long = 0L
     private var pendingAlertJob: Job? = null
 
@@ -265,20 +266,44 @@ class SafetyEngine(
         vibrateWarning.vibrate()
         when (type) {
             AlertType.FALL_CONFIRMED_HELP -> {
-                alertService.sendFallConfirmedHelpAlert(
-                    userId = userId,
-                    confirmationWindowSec = (FALL_DETECTED_CONFIRMATION_WINDOW / 1000).toInt(),
-                    wearingStatus = wearingStatus()
-                )
+                Log.d("LOCATION", "Permission available: ${hasLocationPermission()}")
+                scope.launch(Dispatchers.IO) {
+                    val locJson = if (hasLocationPermission()) {
+                        locationHelper.getLastKnownLocationJson()
+                    } else {
+                        null
+                    }
+
+                    alertService.sendFallConfirmedHelpAlert(
+                        userId = userId,
+                        confirmationWindowSec = (FALL_DETECTED_CONFIRMATION_WINDOW / 1000).toInt(),
+                        wearingStatus = wearingStatus(),
+                        location = locJson
+
+                    )
+                }
+
             }
 
             AlertType.FALL_NO_RESPONSE -> {
-                alertService.sendFallNoResponseAlert(
-                    userId = userId,
-                    elapsedMs = elapsedMs ?: 0L,
-                    wearingStatus = wearingStatus()
-                )
+                Log.d("LOCATION", "NO_RESPONSE permission=${hasLocationPermission()}")
+
+                scope.launch(Dispatchers.IO) {
+                    val locJson = if (hasLocationPermission()) {
+                        locationHelper.getLastKnownLocationJson()
+                    } else null
+
+                    alertService.sendFallNoResponseAlert(
+                        userId = userId,
+                        elapsedMs = elapsedMs ?: 0L,
+                        wearingStatus = wearingStatus(),
+                        location = locJson
+                    )
+                }
             }
+
+
+
 
             AlertType.WATCH_REMOVED -> {
                 alertService.sendWatchRemovedAlert(userId, message, wearingStatus())
