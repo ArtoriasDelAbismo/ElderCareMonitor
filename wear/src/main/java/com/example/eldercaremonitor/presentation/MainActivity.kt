@@ -66,6 +66,13 @@ class MainActivity : ComponentActivity() {
 
     private val showDangerousHrSuggestionState = mutableStateOf(false)
 
+    private val emergencyContacts = listOf(
+        EmergencyContact("Jero", "+5493425145911"),
+        EmergencyContact("Anna", "+5493425925234"), // Android phone
+        EmergencyContact("Freddy", "0987654321"),
+
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d("BOOT", "MainActivity.onCreate START")
         super.onCreate(savedInstanceState)
@@ -85,7 +92,8 @@ class MainActivity : ComponentActivity() {
             alertService = alertService,
             userId = userId,
             locationHelper = WatchLocationHelper(this),
-            hasLocationPermission = { hasLocationPermissionFlag }
+            hasLocationPermission = { hasLocationPermissionFlag },
+            getPrimaryContact = { emergencyContacts.firstOrNull() }
         )
 
         val measureClient = HealthServices.getClient(this).measureClient
@@ -178,6 +186,9 @@ class MainActivity : ComponentActivity() {
 
         */
 
+
+
+
         setContent {
             val hrText = hrTextState.value
             val wearingText = wearingTextState.value
@@ -188,7 +199,7 @@ class MainActivity : ComponentActivity() {
 
             val emergencyContacts = remember {
                 listOf(
-                    EmergencyContact("Ana", "1234567890"),
+                    EmergencyContact("Anna", "+5493425925234"),
                     EmergencyContact("Freddy", "0987654321"),
                     EmergencyContact("Jero", "3425145911"),
                 )
@@ -295,6 +306,9 @@ class MainActivity : ComponentActivity() {
                 val coarse = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
                 hasLocationPermission = coarse
+                hasLocationPermissionFlag = hasLocationPermission
+                Log.d("LOCATION", "Init permission: $hasLocationPermissionFlag")
+
 
 
                 if (!hasLocationPermission) {

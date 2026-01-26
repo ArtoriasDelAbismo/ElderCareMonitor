@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import com.example.eldercaremonitor.data.location.WatchLocationHelper
+import com.example.eldercaremonitor.presentation.EmergencyContact
+
 
 
 
@@ -65,6 +67,7 @@ class SafetyEngine(
 
     private val _isWearing: MutableStateFlow<Boolean> = MutableStateFlow(false),
     private val locationHelper: WatchLocationHelper,
+    private val getPrimaryContact: () -> EmergencyContact?,
     private val hasLocationPermission: () -> Boolean) {
     private var lastAlertTimestamp: Long = 0L
     private var pendingAlertJob: Job? = null
@@ -79,8 +82,6 @@ class SafetyEngine(
     private var lowHrJob: Job? = null
 
     private var lowHrArmed: Boolean = true // prevents repeated alerts while still low
-
-
 
 
 
@@ -273,12 +274,17 @@ class SafetyEngine(
                     } else {
                         null
                     }
+                    Log.d("LOCATION", "locJson = ${locJson?.toString() ?: "null"}")
 
+
+                    val contact = getPrimaryContact()
                     alertService.sendFallConfirmedHelpAlert(
                         userId = userId,
                         confirmationWindowSec = (FALL_DETECTED_CONFIRMATION_WINDOW / 1000).toInt(),
                         wearingStatus = wearingStatus(),
-                        location = locJson
+                        location = locJson,
+                        contactName = contact?.name,
+                        contactPhone = contact?.phoneNumber
 
                     )
                 }
@@ -292,12 +298,17 @@ class SafetyEngine(
                     val locJson = if (hasLocationPermission()) {
                         locationHelper.getLastKnownLocationJson()
                     } else null
+                    Log.d("LOCATION", "locJson = ${locJson?.toString() ?: "null"}")
 
+
+                    val contact = getPrimaryContact()
                     alertService.sendFallNoResponseAlert(
                         userId = userId,
                         elapsedMs = elapsedMs ?: 0L,
                         wearingStatus = wearingStatus(),
-                        location = locJson
+                        location = locJson,
+                        contactName = contact?.name,
+                        contactPhone = contact?.phoneNumber
                     )
                 }
             }

@@ -146,7 +146,9 @@ class AlertService {
         userId: String,
         elapsedMs: Long,
         wearingStatus: String? = null,
-        location: JSONObject? = null
+        location: JSONObject? = null,
+        contactName: String? = null,
+        contactPhone: String? = null
     ) = sendAlert(
         userId = userId,
         logTag = "fall-no-response",
@@ -157,14 +159,18 @@ class AlertService {
         userResponded = false,
         confirmationWindowSec = (elapsedMs / 1000).toInt(),
         wearingStatus = wearingStatus,
-        location = location
+        location = location,
+        contactName = contactName,
+        contactPhone = contactPhone
     )
 
     fun sendFallConfirmedHelpAlert(
         userId: String,
         confirmationWindowSec: Int,
         wearingStatus: String? = null,
-        location: JSONObject? = null
+        location: JSONObject? = null,
+        contactName: String? = null,
+        contactPhone: String? = null
     ) = sendAlert(
         userId = userId,
         logTag = "fall-confirmed",
@@ -175,20 +181,29 @@ class AlertService {
         userResponded = true,
         confirmationWindowSec = confirmationWindowSec,
         wearingStatus = wearingStatus,
-        location = location
+        location = location,
+        contactName = contactName,
+        contactPhone = contactPhone
     )
 
 
 
 
-    fun panicButtonPressed(userId: String, message: String? = null) =
+    fun panicButtonPressed(
+        userId: String,
+        message: String? = null,
+        contactName: String? = null,
+        contactPhone: String? = null
+    ) =
         sendAlert(
             userId = userId,
             logTag = "panic-button",
             eventCode = "PANIC",
             severity = "HIGH",
             message = message ?: "Panic button pressed",
-            requiresUserConfirmation = false
+            requiresUserConfirmation = false,
+            contactName = contactName,
+            contactPhone = contactPhone
         )
 
     fun sendDangerousHeartRateAlert(userId: String, message: String? = null) =
