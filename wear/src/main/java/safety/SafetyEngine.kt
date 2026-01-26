@@ -56,7 +56,6 @@ private const val LOW_HR_RESET_HYSTERESIS = 5
 
 class SafetyEngine(
     //----RECEIVES PARAMETERS FROM MAIN ACTIVITY----
-
     private val vibrateWarning: VibrationHelper,
     private val showWatchRemovedNotification: NotificationHelper,
     private val showFallDetectedNotification: NotificationHelper,
@@ -284,7 +283,8 @@ class SafetyEngine(
                         wearingStatus = wearingStatus(),
                         location = locJson,
                         contactName = contact?.name,
-                        contactPhone = contact?.phoneNumber
+                        contactPhone = contact?.phoneNumber,
+                        heartRateBpm = lastBpm
 
                     )
                 }
@@ -308,7 +308,8 @@ class SafetyEngine(
                         wearingStatus = wearingStatus(),
                         location = locJson,
                         contactName = contact?.name,
-                        contactPhone = contact?.phoneNumber
+                        contactPhone = contact?.phoneNumber,
+                        heartRateBpm = lastBpm
                     )
                 }
             }

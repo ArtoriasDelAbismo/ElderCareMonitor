@@ -37,7 +37,8 @@ class AlertService {
         wearingStatus: String? = null,
         contactName: String? = null,
         contactPhone: String? = null,
-        location: JSONObject? = null
+        location: JSONObject? = null,
+        heartRateBpm: Int? = null
     ) {
         Log.d("NETWORK", "Calling backend alert API: $logTag")
         Log.e("NETWORK_DEBUG", "HITTING URL: $BASE_URL/api/alert | eventCode=$eventCode")
@@ -63,6 +64,11 @@ class AlertService {
                 })
             }
             location?.let { put("location", it) }
+            heartRateBpm?.let { bpm ->
+                put("vitals", JSONObject().apply {
+                    put("heartRateBpm", bpm)
+                })
+            }
 
         }
 
@@ -129,7 +135,7 @@ class AlertService {
         requiresUserConfirmation: Boolean = true,
         userResponded: Boolean = false,
         confirmationWindowSec: Int = 5,
-        wearingStatus: String? = null
+        wearingStatus: String? = null,
     ) = sendAlert(
         userId = userId,
         logTag = "fall-detected",
@@ -139,7 +145,7 @@ class AlertService {
         requiresUserConfirmation = requiresUserConfirmation,
         userResponded = userResponded,
         confirmationWindowSec = confirmationWindowSec,
-        wearingStatus = wearingStatus
+        wearingStatus = wearingStatus,
     )
 
     fun sendFallNoResponseAlert(
@@ -148,7 +154,8 @@ class AlertService {
         wearingStatus: String? = null,
         location: JSONObject? = null,
         contactName: String? = null,
-        contactPhone: String? = null
+        contactPhone: String? = null,
+        heartRateBpm: Int? = null
     ) = sendAlert(
         userId = userId,
         logTag = "fall-no-response",
@@ -161,7 +168,8 @@ class AlertService {
         wearingStatus = wearingStatus,
         location = location,
         contactName = contactName,
-        contactPhone = contactPhone
+        contactPhone = contactPhone,
+        heartRateBpm = heartRateBpm
     )
 
     fun sendFallConfirmedHelpAlert(
@@ -170,7 +178,8 @@ class AlertService {
         wearingStatus: String? = null,
         location: JSONObject? = null,
         contactName: String? = null,
-        contactPhone: String? = null
+        contactPhone: String? = null,
+        heartRateBpm: Int? = null,
     ) = sendAlert(
         userId = userId,
         logTag = "fall-confirmed",
@@ -183,7 +192,8 @@ class AlertService {
         wearingStatus = wearingStatus,
         location = location,
         contactName = contactName,
-        contactPhone = contactPhone
+        contactPhone = contactPhone,
+        heartRateBpm = heartRateBpm
     )
 
 

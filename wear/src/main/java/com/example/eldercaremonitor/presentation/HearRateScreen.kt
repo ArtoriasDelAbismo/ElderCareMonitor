@@ -118,18 +118,23 @@ fun HeartRateScreen(
 
 
 
+
+
         // ---- BUTTON TO SIMULATE DANGEROUS HR ----
 
         /*
-         Button(onClick = onDangerousHrSuggestion, modifier = Modifier
+                  Button(onClick = onDangerousHrSuggestion, modifier = Modifier
         .fillMaxWidth()
         .padding(16.dp)) {
-        Text(text = "Simulate Dangerous Hr")
+        Text(text = "Dangerous Hr")
+
         */
+
 
 
 
 
     }
 }
+
 
