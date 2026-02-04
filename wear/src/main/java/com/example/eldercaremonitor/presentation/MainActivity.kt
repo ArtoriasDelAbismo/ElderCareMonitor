@@ -67,8 +67,8 @@ class MainActivity : ComponentActivity() {
     private val showDangerousHrSuggestionState = mutableStateOf(false)
 
     private val emergencyContacts = listOf(
-        EmergencyContact("Anna", "+5493425925234"), // Android phone
         EmergencyContact("Jero", "+5493425145911"),
+        EmergencyContact("Anna", "+5493425925234"), // Android phone
         EmergencyContact("Freddy", "0987654321"),
 
     )
@@ -200,8 +200,9 @@ class MainActivity : ComponentActivity() {
             val emergencyContacts = remember {
                 listOf(
                     EmergencyContact("Anna", "+5493425925234"),
-                    EmergencyContact("Freddy", "0987654321"),
                     EmergencyContact("Jero", "3425145911"),
+                    EmergencyContact("Freddy", "0987654321"),
+
                 )
             }
             val pendingCallContact = remember { mutableStateOf<EmergencyContact?>(null) }

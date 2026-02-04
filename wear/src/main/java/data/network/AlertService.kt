@@ -28,8 +28,8 @@ class AlertService {
     private fun sendAlert(
         userId: String,
         logTag: String,
-        eventCode: String,          // NEW: canonical code (what happened)
-        severity: String = "LOW",   // NEW
+        eventCode: String,
+        severity: String = "LOW",
         message: String? = null,
         requiresUserConfirmation: Boolean? = null,
         userResponded: Boolean? = null,
@@ -82,8 +82,7 @@ class AlertService {
             put("timestamp", now)
             put("metadata", metadata)
 
-            // LEGACY field so your current backend switch keeps working
-            // (you can remove this after you migrate the backend)
+            // LEGACY
             put("alertType", eventCode)
         }
 
