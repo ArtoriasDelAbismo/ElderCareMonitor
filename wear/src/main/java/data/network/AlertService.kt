@@ -116,14 +116,16 @@ class AlertService {
     fun sendWatchRemovedAlert(
         userId: String,
         message: String? = null,
-        wearingStatus: String? = null
+        wearingStatus: String? = null,
+        location: JSONObject? = null,
     ) = sendAlert(
         userId = userId,
         logTag = "watch-removed",
         eventCode = "WATCH_REMOVED",
         severity = "LOW",
         message = message,
-        wearingStatus = wearingStatus
+        wearingStatus = wearingStatus,
+        location = location
     )
 
 
@@ -135,6 +137,7 @@ class AlertService {
         userResponded: Boolean = false,
         confirmationWindowSec: Int = 5,
         wearingStatus: String? = null,
+        location: JSONObject? = null
     ) = sendAlert(
         userId = userId,
         logTag = "fall-detected",
@@ -145,6 +148,7 @@ class AlertService {
         userResponded = userResponded,
         confirmationWindowSec = confirmationWindowSec,
         wearingStatus = wearingStatus,
+        location = location
     )
 
     fun sendFallNoResponseAlert(
@@ -202,7 +206,8 @@ class AlertService {
         userId: String,
         message: String? = null,
         contactName: String? = null,
-        contactPhone: String? = null
+        contactPhone: String? = null,
+        location: JSONObject? = null,
     ) =
         sendAlert(
             userId = userId,
@@ -212,7 +217,8 @@ class AlertService {
             message = message ?: "Panic button pressed",
             requiresUserConfirmation = false,
             contactName = contactName,
-            contactPhone = contactPhone
+            contactPhone = contactPhone,
+            location = location
         )
 
     fun sendDangerousHeartRateAlert(userId: String, message: String? = null) =
@@ -221,7 +227,7 @@ class AlertService {
             logTag = "dangerous-heart-rate",
             eventCode = "DANGEROUS_HR",
             severity = "MEDIUM",
-            message = message ?: "Dangerous heart rate detected"
+            message = message ?: "Dangerous heart rate detected",
         )
 
     fun sendEmergencyCallAlert(

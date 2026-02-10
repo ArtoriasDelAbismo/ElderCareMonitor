@@ -326,7 +326,25 @@ class SafetyEngine(
             }
 
             AlertType.PANIC_BUTTON -> {
-                alertService.panicButtonPressed(userId, message)
+                Log.d("LOCATION", "PANIC permission=${hasLocationPermission()}")
+
+                scope.launch(Dispatchers.IO) {
+                    val locJson = if (hasLocationPermission()) {
+                        locationHelper.getLastKnownLocationJson()
+                    } else null
+                    Log.d("LOCATION", "locJson = ${locJson?.toString() ?: "null"}")
+
+
+                    val contact = getPrimaryContact()
+                    alertService.panicButtonPressed(
+                        userId = userId,
+                        message = message,
+                        contactName = contact?.name,
+                        contactPhone = contact?.phoneNumber,
+                        location = locJson
+                    )
+                }
+
             }
 
         }
