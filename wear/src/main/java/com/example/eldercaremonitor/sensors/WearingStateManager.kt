@@ -23,7 +23,7 @@ class WearingStateManager(
 
     private var isWorn = false
     private val removalTimeout = 10_000L // 10 seconds
-    private val startupDelay = 10_000L    // Wait 5 seconds before assuming not worn
+    private val startupDelay = 30_000L    // Wait 30 seconds before assuming not worn
 
     private val removalChecker = object : Runnable {
         override fun run() {
