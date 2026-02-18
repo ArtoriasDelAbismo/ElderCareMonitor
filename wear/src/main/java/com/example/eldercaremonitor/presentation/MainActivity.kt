@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
     //private var hasBodySensorsPermission = false
     //private var hasHeartRatePermission = false
 
-    private val userId = "elder_001"
+    private val userId = "01"
 
     // ✅ Activity-owned Compose state (bridge)
     private val hrTextState = mutableStateOf<String?>(null)

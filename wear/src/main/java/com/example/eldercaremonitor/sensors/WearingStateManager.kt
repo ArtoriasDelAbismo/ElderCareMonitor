@@ -22,7 +22,7 @@ class WearingStateManager(
     private var lastHeartRateTime: Long? = null
 
     private var isWorn = false
-    private val removalTimeout = 10_000L // 10 seconds
+    private val removalTimeout = 30_000L // 30 seconds
     private val startupDelay = 30_000L    // Wait 30 seconds before assuming not worn
 
     private val removalChecker = object : Runnable {
