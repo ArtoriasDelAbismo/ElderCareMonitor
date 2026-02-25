@@ -17,6 +17,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        val alertBaseUrl = (project.findProperty("ALERT_BASE_URL") as String?)
+            ?: "https://forgiving-lucia-crudely.ngrok-free.dev"
+        resValue("string", "alert_base_url", alertBaseUrl)
     }
 
     buildTypes {

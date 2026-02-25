@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.net.Uri
+import android.provider.Settings
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -19,11 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.health.services.client.HealthServices
-//import androidx.health.services.client.data.DataType
-//import androidx.health.services.client.permission.HealthPermission
-//import androidx.health.services.client.permission.PermissionController
-import androidx.lifecycle.lifecycleScope
-import androidx.wear.compose.material.Button
+import com.example.eldercaremonitor.R
 import com.example.eldercaremonitor.presentation.theme.ElderCareMonitorTheme
 import com.example.eldercaremonitor.presentation.utils.NotificationHelper
 import com.example.eldercaremonitor.presentation.utils.VibrationHelper
@@ -58,6 +55,7 @@ class MainActivity : ComponentActivity() {
     //private var hasHeartRatePermission = false
 
     private val userId = "01"
+    private var fallNoResponseHandled = false
 
     // ✅ Activity-owned Compose state (bridge)
     private val hrTextState = mutableStateOf<String?>(null)
@@ -67,9 +65,9 @@ class MainActivity : ComponentActivity() {
     private val showDangerousHrSuggestionState = mutableStateOf(false)
 
     private val emergencyContacts = listOf(
+        EmergencyContact("Android", "+5493425925234"), // Android phone
         EmergencyContact("Jero", "+5493425145911"), // My iphone
         EmergencyContact("Juank", "+543424070425"), // Juank's iphone
-        EmergencyContact("Android", "+5493425925234"), // Android phone
         EmergencyContact("Freddy", "0987654321"),
 
     )
@@ -82,7 +80,12 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        alertService = AlertService()
+        val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+            ?: "unknown"
+        alertService = AlertService(
+            baseUrl = getString(R.string.alert_base_url),
+            deviceId = deviceId
+        )
         //permissionController = HealthServices.getClient(this).permissionController
         safetyEngine = SafetyEngine(
             vibrateWarning = VibrationHelper(this),
@@ -126,6 +129,7 @@ class MainActivity : ComponentActivity() {
             context = this,
             onFallDetected = {
                 showFallCheckState.value = true
+                fallNoResponseHandled = false
                 safetyEngine.onEvent(SafetyEvent.FallDetected)
             }
         )
@@ -200,7 +204,7 @@ class MainActivity : ComponentActivity() {
 
             val emergencyContacts = remember {
                 listOf(
-                    EmergencyContact("Anna", "+5493425925234"),
+                    EmergencyContact("Android", "+5493425925234"),
                     EmergencyContact("Jero", "3425145911"),
                     EmergencyContact("Freddy", "0987654321"),
 
@@ -211,7 +215,8 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(showFallCheckScreen) {
                 if (showFallCheckScreen) {
                     delay(FALL_NO_RESPONSE_TIMEOUT_MS)
-                    if (showFallCheckState.value) {
+                    if (showFallCheckState.value && !fallNoResponseHandled) {
+                        fallNoResponseHandled = true
                         showFallCheckState.value = false
                         fallDetectionManager.reset()
                         safetyEngine.onEvent(

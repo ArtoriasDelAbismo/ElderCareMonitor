@@ -12,18 +12,15 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class AlertService {
+class AlertService(
+    private val baseUrl: String,
+    private val deviceId: String
+) {
 
     private val client = OkHttpClient.Builder()
         .callTimeout(10, TimeUnit.SECONDS)
         .connectTimeout(10, TimeUnit.SECONDS)
         .build()
-
-    // TODO: Move to BuildConfig or config file so you don’t hardcode ngrok
-    private val BASE_URL = "https://forgiving-lucia-crudely.ngrok-free.dev"
-
-    // TODO: Replace with a real ID if you have one (device serial, installation id, etc.)
-    private val DEVICE_ID = "watch_001"
 
     private fun sendAlert(
         userId: String,
@@ -41,13 +38,12 @@ class AlertService {
         heartRateBpm: Int? = null
     ) {
         Log.d("NETWORK", "Calling backend alert API: $logTag")
-        Log.e("NETWORK_DEBUG", "HITTING URL: $BASE_URL/api/alert | eventCode=$eventCode")
+        Log.e("NETWORK_DEBUG", "HITTING URL: $baseUrl/api/alert | eventCode=$eventCode")
 
         val now = System.currentTimeMillis()
-        val eventId = "evt_$now" // good enough for prototype
+        val eventId = "evt_$now"
 
         val metadata = JSONObject().apply {
-            // Optional fields only if provided
             if (!message.isNullOrBlank()) put("alertMessage", message)
 
             requiresUserConfirmation?.let { put("requiresUserConfirmation", it) }
@@ -57,7 +53,6 @@ class AlertService {
             if (!contactName.isNullOrBlank()) put("contactName", contactName)
             if (!contactPhone.isNullOrBlank()) put("contactPhone", contactPhone)
 
-            // sensorState subobject (only include if we have something)
             if (!wearingStatus.isNullOrBlank()) {
                 put("sensorState", JSONObject().apply {
                     put("wearingStatus", wearingStatus)
@@ -69,30 +64,27 @@ class AlertService {
                     put("heartRateBpm", bpm)
                 })
             }
-
         }
 
         val json = JSONObject().apply {
-            // NEW structured fields
             put("eventId", eventId)
-            put("deviceId", DEVICE_ID)
+            put("deviceId", deviceId)
             put("userId", userId)
             put("eventCode", eventCode)
             put("severity", severity)
             put("timestamp", now)
             put("metadata", metadata)
 
-            // LEGACY
             put("alertType", eventCode)
         }
 
-        Log.d("NETWORK_DEBUG", "Alert payload: ${json}")
+        Log.d("NETWORK_DEBUG", "Alert payload: $json")
 
         val requestBody = json.toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val request = Request.Builder()
-            .url("$BASE_URL/api/alert")
+            .url("$baseUrl/api/alert")
             .post(requestBody)
             .build()
 
@@ -127,7 +119,6 @@ class AlertService {
         wearingStatus = wearingStatus,
         location = location
     )
-
 
     fun sendFallDetectedAlert(
         userId: String,
@@ -164,7 +155,7 @@ class AlertService {
         logTag = "fall-no-response",
         eventCode = "FALL_NO_RESPONSE",
         severity = "HIGH",
-        message = "High severity fall: no response after ${elapsedMs/1000}s",
+        message = "High severity fall: no response after ${elapsedMs / 1000}s",
         requiresUserConfirmation = true,
         userResponded = false,
         confirmationWindowSec = (elapsedMs / 1000).toInt(),
@@ -199,27 +190,23 @@ class AlertService {
         heartRateBpm = heartRateBpm
     )
 
-
-
-
     fun panicButtonPressed(
         userId: String,
         message: String? = null,
         contactName: String? = null,
         contactPhone: String? = null,
         location: JSONObject? = null,
-    ) =
-        sendAlert(
-            userId = userId,
-            logTag = "panic-button",
-            eventCode = "PANIC",
-            severity = "HIGH",
-            message = message ?: "Panic button pressed",
-            requiresUserConfirmation = false,
-            contactName = contactName,
-            contactPhone = contactPhone,
-            location = location
-        )
+    ) = sendAlert(
+        userId = userId,
+        logTag = "panic-button",
+        eventCode = "PANIC",
+        severity = "HIGH",
+        message = message ?: "Panic button pressed",
+        requiresUserConfirmation = false,
+        contactName = contactName,
+        contactPhone = contactPhone,
+        location = location
+    )
 
     fun sendDangerousHeartRateAlert(userId: String, message: String? = null) =
         sendAlert(
@@ -235,15 +222,13 @@ class AlertService {
         contactName: String,
         contactPhone: String,
         message: String? = null
-    ) =
-        sendAlert(
-            userId = userId,
-            logTag = "emergency-call",
-            eventCode = "EMERGENCY_CALL",
-            severity = "CRITICAL",
-            message = message ?: "Escalating to emergency call",
-            contactName = contactName,
-            contactPhone = contactPhone
-        )
+    ) = sendAlert(
+        userId = userId,
+        logTag = "emergency-call",
+        eventCode = "EMERGENCY_CALL",
+        severity = "CRITICAL",
+        message = message ?: "Escalating to emergency call",
+        contactName = contactName,
+        contactPhone = contactPhone
+    )
 }
-

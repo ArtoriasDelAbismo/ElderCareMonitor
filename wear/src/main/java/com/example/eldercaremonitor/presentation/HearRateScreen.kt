@@ -99,16 +99,6 @@ fun HeartRateScreen(
 
         //Spacer(modifier = Modifier.height(20.dp))
 
-
-        Text(
-        text = "-->",
-        textAlign = TextAlign.End,
-        color = Color.White
-        )
-
-
-
-
         // ---- BUTTON TO SIMULATE FALL ----
 
 
