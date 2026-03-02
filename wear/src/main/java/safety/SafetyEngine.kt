@@ -54,7 +54,8 @@ class SafetyEngine(
     private val _isWearing: MutableStateFlow<Boolean> = MutableStateFlow(false),
     private val locationHelper: WatchLocationHelper,
     private val getPrimaryContact: () -> EmergencyContact?,
-    private val hasLocationPermission: () -> Boolean
+    private val hasLocationPermission: () -> Boolean,
+    private val onHighHrSuggestion: () -> Unit = {}
 ) {
     private val lastAlertByType: MutableMap<AlertType, Long> = mutableMapOf()
 
@@ -114,6 +115,7 @@ class SafetyEngine(
                             if (current >= HIGH_BPM_THRESHOLD && highHrArmed) {
                                 highHrArmed = false
                                 showDangerousHeartRateNotification.showDangerousHeartRateNotification()
+                                onHighHrSuggestion()
                                 triggerAlert(
                                     AlertType.DANGEROUS_HR,
                                     "WARNING: Sustained high heart rate: " +
