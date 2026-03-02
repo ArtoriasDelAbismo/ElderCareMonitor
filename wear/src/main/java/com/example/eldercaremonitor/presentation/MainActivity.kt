@@ -65,8 +65,8 @@ class MainActivity : ComponentActivity() {
     private val showDangerousHrSuggestionState = mutableStateOf(false)
 
     private val emergencyContacts = listOf(
+        EmergencyContact("Jeronimo", "+5493425145911"), // My iphone
         EmergencyContact("Android", "+5493425925234"), // Android phone
-        EmergencyContact("Jero", "+5493425145911"), // My iphone
         EmergencyContact("Juank", "+543424070425"), // Juank's iphone
         EmergencyContact("Freddy", "0987654321"),
 
@@ -97,7 +97,8 @@ class MainActivity : ComponentActivity() {
             userId = userId,
             locationHelper = WatchLocationHelper(this),
             hasLocationPermission = { hasLocationPermissionFlag },
-            getPrimaryContact = { emergencyContacts.firstOrNull() }
+            getPrimaryContact = { emergencyContacts.firstOrNull() },
+            onHighHrSuggestion = { showDangerousHrSuggestionState.value = true }
         )
 
         val measureClient = HealthServices.getClient(this).measureClient
@@ -204,8 +205,9 @@ class MainActivity : ComponentActivity() {
 
             val emergencyContacts = remember {
                 listOf(
-                    EmergencyContact("Android", "+5493425925234"),
                     EmergencyContact("Jero", "3425145911"),
+                    EmergencyContact("Android", "+5493425925234"),
+
                     EmergencyContact("Freddy", "0987654321"),
 
                 )
