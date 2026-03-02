@@ -40,7 +40,7 @@ fun DangerousHrSuggestionScreen(
         item {
             Image(painter = painterResource(
                 id = R.drawable.homebrella_icon_cropped),
-                contentDescription = "Homebrella Icon",
+                contentDescription = "Icono de Homebrella",
                 modifier = Modifier.size(48.dp)
             )
         }
@@ -49,7 +49,7 @@ fun DangerousHrSuggestionScreen(
         }
         item {
             Text(
-                text = "High heart rate",
+                text = "Frecuencia cardiaca alta",
                 textAlign = TextAlign.Center,
                 color = Color.White,
                 fontSize = 18.sp
@@ -60,7 +60,7 @@ fun DangerousHrSuggestionScreen(
         }
         item {
             Text(
-                text = "Slow down and rest for a moment.",
+                text = "Baja el ritmo y descansa un momento.",
                 textAlign = TextAlign.Center,
                 color = Color.White
             )
@@ -70,7 +70,7 @@ fun DangerousHrSuggestionScreen(
         }
         item {
             Text(
-                text = "Breathe slowly and resume when you feel better.",
+                text = "Respira despacio y retoma cuando te sientas mejor.",
                 textAlign = TextAlign.Center,
                 color = Color.White
             )
