@@ -76,8 +76,8 @@ class NotificationHelper(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, "fall_alerts")
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("Fall Detected...")
-            .setContentText("A fall has been detected on the device.")
+            .setContentTitle("Caida...")
+            .setContentText("Una caída se ha detectado en el dispositivo.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
@@ -107,8 +107,8 @@ class NotificationHelper(private val context: Context) {
         }
         val notification = NotificationCompat.Builder(context, "dangerous_heart_rate_alerts")
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("Dangerous Heart Rate Detected")
-            .setContentText("Your heart rate is dangerously high.")
+            .setContentTitle("Ritmo cardíaco alto")
+            .setContentText("Tu ritmo cardíaco está demasiado alto.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
@@ -138,8 +138,8 @@ class NotificationHelper(private val context: Context) {
         }
         val notification = NotificationCompat.Builder(context, "panic_button_alerts")
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("Panic Button Pressed")
-            .setContentText("Calling emergency contact...")
+            .setContentTitle("Pánico activado")
+            .setContentText("Llamando al contacto de emergencia...")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
