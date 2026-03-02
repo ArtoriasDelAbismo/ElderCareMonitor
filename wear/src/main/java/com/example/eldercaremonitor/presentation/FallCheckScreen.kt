@@ -41,9 +41,9 @@ fun FallCheckScreen(
             contentDescription = "Homebrella Icon",
             modifier = Modifier.size(48.dp))
 
-        Text(text = "Fall detected", textAlign = TextAlign.Center)
+        Text(text = "Caída detectada", textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(6.dp))
-        Text(text = "Are you okay?", textAlign = TextAlign.Center)
+        Text(text = "Te encuentras bien?", textAlign = TextAlign.Center)
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -52,11 +52,11 @@ fun FallCheckScreen(
             horizontalArrangement = Arrangement.Center
         ) {
             Button(onClick = onImOk, modifier = Modifier.width(50.dp)) {
-                Text(text = "I'm ok")
+                Text(text = "Bien")
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = onNeedHelp, modifier = Modifier.width(90.dp)) {
-                Text(text = "Need help")
+            Spacer(modifier = Modifier.width(10.dp))
+            Button(onClick = onNeedHelp, modifier = Modifier.width(50.dp)) {
+                Text(text = "Ayuda")
             }
         }
     }
