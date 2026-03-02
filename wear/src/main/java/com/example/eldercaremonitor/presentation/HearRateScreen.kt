@@ -81,8 +81,6 @@ fun HeartRateScreen(
                         color = Color.White
                     )
                 }
-
-
             }
         }
 
@@ -106,19 +104,15 @@ fun HeartRateScreen(
         Text(text = "Simulate fall")
         }
 
-
-
-
-
         // ---- BUTTON TO SIMULATE DANGEROUS HR ----
 
-        /*
-                  Button(onClick = onDangerousHrSuggestion, modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp)) {
-        Text(text = "Dangerous Hr")
+//
+//        Button(onClick = onDangerousHrSuggestion, modifier = Modifier
+//        .fillMaxWidth()
+//        .padding(16.dp)) {
+//        Text(text = "Dangerous Hr")
+//        }
 
-        */
 
 
 
@@ -126,5 +120,6 @@ fun HeartRateScreen(
 
     }
 }
+
 
 
