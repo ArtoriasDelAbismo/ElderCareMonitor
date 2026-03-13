@@ -44,7 +44,9 @@ fun HeartRateScreen(
         Image(
             painter = painterResource(id = R.drawable.homebrella_icon_cropped),
             contentDescription = "Homebrella Icon",
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier
+                .size(48.dp)
+                .offset(y = (-10).dp)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -52,6 +54,8 @@ fun HeartRateScreen(
         // BPM + HEART ICON + "bpm"
         if (hasBpm) {
             Row(
+                modifier = Modifier
+                    .offset(y = (-10).dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -99,10 +103,10 @@ fun HeartRateScreen(
 
         // ---- BUTTON TO SIMULATE FALL ----
 
-
-        Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
-        Text(text = "Simulate fall")
-        }
+//
+//        Button(onClick = onDebugFall, modifier = Modifier.width(100.dp)) {
+//        Text(text = "Simulate fall")
+//        }
 
         // ---- BUTTON TO SIMULATE DANGEROUS HR ----
 
